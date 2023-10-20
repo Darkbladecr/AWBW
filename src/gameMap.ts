@@ -27,6 +27,10 @@ class GameMap {
   async init() {
     this.terrain = await Promise.all(this._loadAssets('terrain', terrain));
     this.units = await Promise.all(this._loadAssets('units', countryUnits));
+    // fix for deleted sprites
+    this.terrain = [...this.terrain.slice(0, 57), ...new Array(81-58).fill(null), ...this.terrain.slice(57)];
+    this.terrain = [...this.terrain.slice(0, 176), ...new Array(181-177).fill(null), ...this.terrain.slice(176)];
+    
     this._insertSprite(ESpriteType.TERRAIN, ETerrain.MOUNTAIN, 0, 0);
     this._insertSprite(ESpriteType.UNIT, getUnitCode(ECountry.ORANGE_STAR, EUnit.INFANTRY), 1, 1);
     return this;
@@ -85,7 +89,7 @@ class GameMap {
     // terrain
     for(let x = 0; x < this.width; x++){
       for (let y = 0; y < this.height; y++){
-        const img = this.terrain[this.terrainMap[x][y] - 1];
+        const img = this.terrain[this.terrainMap[y][x] - 1];
         if (!img){
           continue;
         }
@@ -96,7 +100,7 @@ class GameMap {
     // units
     for(let x = 0; x < this.width; x++){
       for (let y = 0; y < this.height; y++){
-        const img = this.units[this.unitMap[x][y] - 1];
+        const img = this.units[this.unitMap[y][x] - 1];
         if (!img){
           continue;
         }
