@@ -9,19 +9,22 @@ class GameMap {
   width: number;
   height: number;
   grid = 16;
+  padding = 2;
   terrainMap: number[][];
   unitMap: number[][];
   terrain: HTMLImageElement[] = [];
   units: HTMLImageElement[] = [];
+  canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
 
   constructor(width: number, height: number) {
     this.width = width;
     this.height = height;
-    this.terrainMap = Array.from({length: width}, () => Array(height).fill(1));
-    this.unitMap = Array.from({length: width}, () => Array(height).fill(null));
+    this.terrainMap = Array.from({length: height}, () => Array(width).fill(1));
+    this.unitMap = Array.from({length: height}, () => Array(width).fill(null));
 
-    this.ctx = this._setupCanvas('map');
+    this.canvas = this._setupCanvas('map');
+    this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
   }
 
   async init() {
@@ -44,10 +47,11 @@ class GameMap {
       throw new Error(`#${id} not found on page`);
     }
     el.replaceWith(canvas);
-    canvas.width = this.width * this.grid;
-    canvas.height = this.height * this.grid;
+    canvas.width = this.width * this.grid + this.padding * 2;
+    canvas.height = this.height * this.grid + this.padding * 2;
+    this.canvas = canvas;
     this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-    return this.ctx;
+    return canvas;
   }
 
   private _loadAssets(path: string, filenames: string[]): Promise<HTMLImageElement>[] {
@@ -66,19 +70,21 @@ class GameMap {
     // vertical
     this.ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
     for (let i = 0; i < this.width + 1; i++) {
-      const iPx = i * this.grid;
+      const iPx = i * this.grid + this.padding;
+      const heightPx = this.height * this.grid + this.padding;
       this.ctx.beginPath();
-      this.ctx.moveTo(iPx, 0);
-      this.ctx.lineTo(iPx, this.height * this.grid);
+      this.ctx.moveTo(iPx, 0 + this.padding);
+      this.ctx.lineTo(iPx, heightPx);
       this.ctx.stroke();
       this.ctx.closePath();
     }
     // horizontal
     for (let i = 0; i < this.height + 1; i++) {
-      const iPx = i * this.grid;
+      const iPx = i * this.grid + this.padding;
+      const widthPx = this.width * this.grid + this.padding;
       this.ctx.beginPath();
-      this.ctx.moveTo(0, iPx);
-      this.ctx.lineTo(this.width * this.grid, iPx);
+      this.ctx.moveTo(0 + this.padding, iPx);
+      this.ctx.lineTo(widthPx, iPx);
       this.ctx.stroke();
       this.ctx.closePath();
     }
@@ -94,7 +100,7 @@ class GameMap {
           continue;
         }
         const offset = img.height - this.grid;
-        this.ctx.drawImage(img, x * this.grid, y * this.grid - offset);
+        this.ctx.drawImage(img, x * this.grid + this.padding, y * this.grid - offset + this.padding);
       }
     }
     // units
@@ -105,9 +111,10 @@ class GameMap {
           continue;
         }
         const offset = img.height - this.grid;
-        this.ctx.drawImage(img, x * this.grid, y * this.grid - offset);
+        this.ctx.drawImage(img, x * this.grid + this.padding, y * this.grid - offset + this.padding);
       }
     }
+    this.canvas.style.background = "#000";
   }
 
   importMap(map: number[][] | string){
@@ -118,15 +125,7 @@ class GameMap {
     this.height = map[0].length;
     this.terrainMap = map;
 
-    const canvas = document.createElement('canvas');
-    const el = document.getElementById('map');
-    if (!el) {
-      throw new Error('#map not found on page');
-    }
-    el.replaceWith(canvas);
-    canvas.width = this.width * this.grid;
-    canvas.height = this.height * this.grid;
-    this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+    this._setupCanvas('map');
   }
 
   private _insertSprite(type: ESpriteType, index: number, x: number, y: number) {

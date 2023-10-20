@@ -1,9 +1,5 @@
 import GameMap from './gameMap';
 
-// width="402" height="322"
-const width = 400; // 25
-const height = 320; // 20
-
 // const sampleMap = [
 // [36,22,123,28,18,34,15,15,34,15,19,1,34,22,15,34,112],
 // [25,35,3,26,20,3,1,1,1,3,16,1,3,16,1,21,19],
@@ -45,7 +41,6 @@ const sampleMap = `36,22,123,28,18,34,15,15,34,15,19,1,34,22,15,34,112
 async function main() {
     const gameMap = await new GameMap(25, 20).init();
     gameMap.importMap(sampleMap);
-    console.log(gameMap.terrainMap);
     gameMap.render();
     gameMap.drawGrid();
 }
