@@ -1,0 +1,17 @@
+https://awbw.amarriner.com/terrain/ani/1.gif
+https://awbw.amarriner.com/terrain/ani/2.gif
+https://awbw.amarriner.com/terrain/ani/3.gif
+https://awbw.amarriner.com/terrain/ani/4.gif
+https://awbw.amarriner.com/terrain/ani/5.gif
+https://awbw.amarriner.com/terrain/ani/6.gif
+https://awbw.amarriner.com/terrain/ani/7.gif
+https://awbw.amarriner.com/terrain/ani/8.gif
+https://awbw.amarriner.com/terrain/ani/9.gif
+https://awbw.amarriner.com/terrain/ani/10.gif
+https://awbw.amarriner.com/terrain/supply_right.gif
+https://awbw.amarriner.com/terrain/trap_right.gif
+https://awbw.amarriner.com/terrain/target_icon2.gif
+https://awbw.amarriner.com/terrain/unit_select.gif
+https://awbw.amarriner.com/terrain/ani/aniammo.gif
+https://awbw.amarriner.com/terrain/ani/anifuel.gif
+https://awbw.amarriner.com/terrain/ani/capture.gif
