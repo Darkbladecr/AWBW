@@ -1,3 +1,4 @@
+import GifLoader from "./gifLoader";
 import Building from "./models/Building";
 import Unit from "./models/Unit";
 import {
@@ -25,24 +26,38 @@ interface IRenderArgs {
   grid?: boolean;
 }
 
+interface ICache {
+  static: ImageData | undefined;
+  dynamic: ImageData | undefined;
+  units: ImageData | undefined;
+}
+
 class GameMap {
+  id: string;
   width: number;
   height: number;
   grid = 16;
   padding = 4;
   terrainMap: number[][];
-  cachedTerrainImg: HTMLImageElement | undefined;
-  buildings: Building[] = [];
+  buildings: Map<string, Building> = new Map();
   mapMetadata: ITerrainMetadata[][];
-  units: Unit[] = [];
+  units: Map<string, Unit> = new Map();
+
+  gifs: Map<string, GifLoader> = new Map();
 
   assets: IAssets;
+  cache: ICache = {
+    static: undefined,
+    dynamic: undefined,
+    units: undefined,
+  };
 
   style: EMapStyle = EMapStyle.ANIMATED;
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
+  canvas!: HTMLCanvasElement;
+  ctx!: CanvasRenderingContext2D;
 
-  constructor(width: number, height: number) {
+  constructor(id: string, width: number, height: number) {
+    this.id = id;
     this.width = width;
     this.height = height;
     this.terrainMap = Array.from({ length: height }, () =>
@@ -60,8 +75,7 @@ class GameMap {
       units: new Map(),
     };
 
-    this.canvas = this._setupCanvas("map");
-    this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
+    this._setupCanvas(this.id);
   }
 
   async init() {
@@ -152,8 +166,9 @@ class GameMap {
     canvas.width = this.width * this.grid + this.padding * 2;
     canvas.height = this.height * this.grid + this.padding * 2;
     this.canvas = canvas;
-    this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-    return canvas;
+    this.ctx = canvas.getContext("2d", {
+      willReadFrequently: true,
+    }) as CanvasRenderingContext2D;
   }
 
   private _loadAssets(
@@ -205,7 +220,7 @@ class GameMap {
 
     // terrain
     if (staticTerrain) {
-      if (!this.cachedTerrainImg) {
+      if (!this.cache.static) {
         for (let x = 0; x < this.width; x++) {
           for (let y = 0; y < this.height; y++) {
             const img = this.assets.terrain.static.get(this.terrainMap[y][x])
@@ -221,18 +236,16 @@ class GameMap {
             );
           }
         }
-        const png = this.canvas.toDataURL("image/png");
-        const img = new Image();
-        img.src = png;
-        this.cachedTerrainImg = img;
+        const imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+        this.cache.static = imageData;
       } else {
-        this.ctx.drawImage(this.cachedTerrainImg, 0, 0);
+        this.ctx.putImageData(this.cache.static, 0, 0);
       }
     }
 
     // buildings
     if (dynamicTerrain) {
-      for (const building of this.buildings) {
+      for (const building of this.buildings.values()) {
         const img = this.assets.terrain.dynamic.get(building.spriteIdx)?.sprite[
           this.style
         ];
@@ -240,27 +253,63 @@ class GameMap {
           continue;
         }
         const offset = img.height - this.grid;
-        this.ctx.drawImage(
-          img,
-          building.x * this.grid + this.padding,
-          building.y * this.grid - offset + this.padding
-        );
+        if (this.style === EMapStyle.ANIMATED) {
+          const gifLoader = new GifLoader(
+            img.src,
+            this.ctx,
+            building.x * this.grid + this.padding,
+            building.y * this.grid - offset + this.padding
+          );
+          const existingGif = this.gifs.get(
+            this._mapKey(building.x, building.y)
+          );
+          if (existingGif) {
+            existingGif.autoplay = false;
+          }
+          this.gifs.set(this._mapKey(building.x, building.y), gifLoader);
+          gifLoader.init();
+        } else {
+          this.ctx.drawImage(
+            img,
+            building.x * this.grid + this.padding,
+            building.y * this.grid - offset + this.padding
+          );
+        }
       }
+      const imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+      this.cache.dynamic = imageData;
     }
     // units
     if (units) {
-      for (const unit of this.units) {
+      for (const unit of this.units.values()) {
         const img = this.assets.units.get(unit.spriteIdx)?.sprite[this.style];
         if (!img) {
           continue;
         }
         const offset = img.height - this.grid;
-        this.ctx.drawImage(
-          img,
-          unit.x * this.grid + this.padding,
-          unit.y * this.grid - offset + this.padding
-        );
+        if (this.style === EMapStyle.ANIMATED) {
+          const gifLoader = new GifLoader(
+            img.src,
+            this.ctx,
+            unit.x * this.grid + this.padding,
+            unit.y * this.grid - offset + this.padding
+          );
+          const existingGif = this.gifs.get(this._mapKey(unit.x, unit.y));
+          if (existingGif) {
+            existingGif.autoplay = false;
+          }
+          this.gifs.set(this._mapKey(unit.x, unit.y), gifLoader);
+          gifLoader.init();
+        } else {
+          this.ctx.drawImage(
+            img,
+            unit.x * this.grid + this.padding,
+            unit.y * this.grid - offset + this.padding
+          );
+        }
       }
+      const imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+      this.cache.dynamic = imageData;
     }
     this.canvas.style.background = "#000";
 
@@ -286,7 +335,7 @@ class GameMap {
       }
     }
 
-    this._setupCanvas("map");
+    this._setupCanvas(this.id);
   }
 
   insertTerrain(index: ETerrain, x: number, y: number) {
@@ -298,26 +347,18 @@ class GameMap {
     } else {
       this.terrainMap[y][x] = 0;
       const building = new Building(index, x, y);
-      const buildingsIdx = this.buildings.findIndex(
-        (b) => b.x === x && b.y === y
-      );
-      if (buildingsIdx !== -1) {
-        this.buildings[buildingsIdx] = building;
-      } else {
-        this.buildings.push(building);
-      }
+      this.buildings.set(this._mapKey(x, y), building);
     }
     this.mapMetadata[y][x] = getTerrainMetadata(index);
   }
 
   insertUnit(countryIdx: ECountry, unitIdx: EUnit, x: number, y: number) {
     const unit = new Unit(countryIdx, unitIdx, x, y);
-    const unitsIdx = this.units.findIndex((u) => u.x === x && u.y);
-    if (unitsIdx !== -1) {
-      this.units[unitsIdx] = unit;
-    } else {
-      this.units.push(unit);
-    }
+    this.units.set(this._mapKey(x, y), unit);
+  }
+
+  private _mapKey(x: number, y: number) {
+    return `(${x},${y})`;
   }
 }
 

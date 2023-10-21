@@ -44,15 +44,34 @@ const sampleMap = [
 // 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1`;
 
 async function main() {
-  const gameMap = await new GameMap(25, 20).init();
+  const gameMap = await new GameMap("map", 25, 20).init();
   gameMap.importMap(sampleMap);
   gameMap.insertTerrain(ETerrain.ORANGESTARCOMTOWER, 0, 0);
-  gameMap.insertUnit(ECountry.ORANGE_STAR, EUnit.INFANTRY, 1, 1);
+  gameMap.insertUnit(ECountry.ORANGE_STAR, EUnit.INFANTRY, 0, 2);
+  // gameMap.insertUnit(ECountry.ORANGE_STAR, EUnit.MECH, 2, 1);
   gameMap.render({ grid: true });
+  console.log(gameMap.gifs.get(`(1,1)`));
+  // gameMap.units.forEach((x) => console.log(x));
 
   // console.log("buildings:", gameMap.buildings);
   // console.log("units:", gameMap.units);
-  console.log("mapMetadata:", gameMap.mapMetadata);
+  // console.log("mapMetadata:", gameMap.mapMetadata);
   // console.log("dynamic:", gameMap.assets.terrain.dynamic);
+
+  // const c = document.createElement("canvas");
+  // c.id = "map";
+  // const el = document.getElementById("map");
+  // if (!el) {
+  //   throw new Error(`#map not found on page`);
+  // }
+  // el.replaceWith(c);
+  // const ctx = c.getContext("2d") as CanvasRenderingContext2D;
+  // const gif = await new GifLoader(
+  //   "./sprites/units/ani/osinfantry.gif",
+  //   ctx,
+  //   0,
+  //   50
+  // ).init();
 }
+
 main();

@@ -11,5 +11,8 @@
   "devDependencies": {
     "typescript": "^5.0.2",
     "vite": "^4.4.8"
+  },
+  "dependencies": {
+    "gifuct-js": "^2.1.2"
   }
 }
