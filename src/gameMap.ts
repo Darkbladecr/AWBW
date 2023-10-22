@@ -13,7 +13,7 @@ import {
 } from "./models/types";
 import { terrain, ETerrain, countryUnits, ECountry } from "./sprites";
 
-interface IAssets {
+export interface IAssets {
   terrain: {
     static: Map<ETerrain, ITerrainMetadata>;
     dynamic: Map<ETerrain, ITerrainMetadata>;
@@ -71,6 +71,7 @@ class GameMap {
   assets: IAssets;
 
   style: EMapStyle = EMapStyle.ANIMATED;
+  lastRender = 0;
 
   constructor(id: string, width: number, height: number) {
     this.id = id;
@@ -286,7 +287,6 @@ class GameMap {
             continue;
           }
 
-          let offset = 0;
           let img: HTMLImageElement | undefined;
           let frames: ParsedFrame[] = [];
 
@@ -297,9 +297,6 @@ class GameMap {
             if (terrainMetadata) {
               frames = terrainMetadata.frames;
               img = terrainMetadata.sprite[this.style];
-              if (img) {
-                offset = img.height - this.grid;
-              }
             }
           } else if (item instanceof Building) {
             const terrainMetadata = this.assets.terrain.dynamic.get(
@@ -308,23 +305,18 @@ class GameMap {
             if (terrainMetadata) {
               frames = terrainMetadata.frames;
               img = terrainMetadata.sprite[this.style];
-              if (img) {
-                offset = img.height - this.grid;
-              }
             }
           } else if (item instanceof Unit) {
             const unitMetadata = this.assets.units.get(item.spriteIdx);
             if (unitMetadata) {
               frames = unitMetadata.frames;
               img = unitMetadata.sprite[this.style];
-              if (img) {
-                offset = img.height - this.grid;
-              }
             }
           }
           if (!img) {
             continue;
           }
+          const offset = img.height - this.grid;
           const posX = item.x * this.grid + this.padding;
           const posY = item.y * this.grid - offset + this.padding;
           if (this.style === EMapStyle.ANIMATED) {
@@ -333,7 +325,7 @@ class GameMap {
               this.layers[layerId].ctx,
               posX,
               posY,
-              this.style === EMapStyle.ANIMATED
+              false && this.style === EMapStyle.ANIMATED
             );
           } else {
             this.layers[layerId].ctx.drawImage(img, posX, posY);
@@ -386,22 +378,71 @@ class GameMap {
       index < ETerrain.NEUTRALCITY ||
       (index >= ETerrain.VPIPE && index <= ETerrain.WPIPEEND)
     ) {
-      const terrain = new Terrain(index, x, y);
+      const terrain = new Terrain(this.assets.terrain, index, x, y);
       this.layers[ELayer.STATIC].sprites[y][x] = terrain;
     } else {
-      const building = new Building(index, x, y);
+      const building = new Building(this.assets.terrain, index, x, y);
       this.layers[ELayer.DYNAMIC].sprites[y][x] = building;
     }
     this.mapMetadata[y][x] = getTerrainMetadata(index);
   }
 
   insertUnit(countryIdx: ECountry, unitIdx: EUnit, x: number, y: number) {
-    const unit = new Unit(countryIdx, unitIdx, x, y);
+    const unit = new Unit(this.assets.units, countryIdx, unitIdx, x, y);
     this.layers[ELayer.UNITS].sprites[y][x] = unit;
   }
 
   private _mapKey(x: number, y: number) {
     return `(${x},${y})`;
+  }
+
+  animate(timestamp: number) {
+    const delta = timestamp - this.lastRender;
+    this.lastRender = timestamp;
+
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        for (let layerId = 0; layerId < this.layerLabels.length; layerId++) {
+          const item = this.layers[layerId].sprites[y][x];
+          if (item) {
+            item.timeElapsed += delta;
+            const frame = item.metadata.frames[item.frameIndex];
+            if (item.timeElapsed > frame.delay) {
+              item.timeElapsed = 0;
+              item.frameIndex += 1;
+              if (item.frameIndex >= item.metadata.frames.length) {
+                item.frameIndex = 0;
+              }
+              const nextFrame = item.metadata.frames[item.frameIndex];
+
+              if (frame.disposalType === 2) {
+                const offset = frame.dims.height - this.grid;
+                const posX = item.x * this.grid + this.padding;
+                const posY = item.y * this.grid - offset + this.padding;
+                this.layers[layerId].ctx.clearRect(
+                  posX,
+                  posY,
+                  frame.dims.width,
+                  frame.dims.height
+                );
+              }
+              const { dims } = nextFrame;
+              const frameImageData = this.layers[
+                ELayer.UNITS
+              ].ctx.createImageData(dims.width, dims.height);
+              frameImageData.data.set(nextFrame.patch);
+
+              const offset = nextFrame.dims.height - this.grid;
+              const posX = item.x * this.grid + this.padding;
+              const posY = item.y * this.grid - offset + this.padding;
+
+              this.layers[layerId].ctx.putImageData(frameImageData, posX, posY);
+            }
+          }
+        }
+      }
+    }
+    requestAnimationFrame(this.animate.bind(this));
   }
 }
 

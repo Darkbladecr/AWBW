@@ -1,11 +1,13 @@
+import { IAssets } from "../gameMap";
 import { ECountry, getUnitCode, unitNames } from "../sprites";
+import Sprite from "./Sprite";
 import { EUnit, IUnitMetadata, unitMetadata } from "./types";
 
 // const landEUnits = [1, 2, 3, 11, 13, 14, 15, 16, 17, 18, 19, 20, 24];
 // const airEUnits = [4, 6, 7, 10, 21, 23];
 // const seaEUnits = [5, 8, 9, 12, 22];
 
-export default class Unit {
+export default class Unit extends Sprite {
   spriteIdx: number;
   country: ECountry;
   unit: EUnit;
@@ -19,6 +21,7 @@ export default class Unit {
   y: number;
 
   constructor(
+    assets: IAssets["units"],
     country: ECountry,
     unit: EUnit,
     x: number,
@@ -27,6 +30,7 @@ export default class Unit {
     ammo?: number,
     fuel?: number
   ) {
+    super();
     this.country = country;
     this.unit = unit;
     this.name = unitNames[unit - 1];
@@ -38,5 +42,10 @@ export default class Unit {
     this.fuel = fuel ?? 99;
 
     this.metadata = unitMetadata[unit - 1];
+    const asset = assets.get(unit);
+    if (asset) {
+      this.metadata.sprite = asset.sprite;
+      this.metadata.frames = asset.frames;
+    }
   }
 }
