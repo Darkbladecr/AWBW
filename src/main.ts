@@ -1,6 +1,7 @@
 import GameMap from "./gameMap";
 import { EUnit } from "./models/types";
 import { ECountry, ETerrain } from "./sprites";
+import "./style.css";
 
 const sampleMap = [
   [36, 22, 123, 28, 18, 34, 15, 15, 34, 15, 19, 1, 34, 22, 15, 34, 112],
@@ -48,9 +49,11 @@ async function main() {
   gameMap.importMap(sampleMap);
   gameMap.insertTerrain(ETerrain.ORANGESTARCOMTOWER, 0, 0);
   gameMap.insertUnit(ECountry.ORANGE_STAR, EUnit.INFANTRY, 0, 2);
-  // gameMap.insertUnit(ECountry.ORANGE_STAR, EUnit.MECH, 2, 1);
   gameMap.render({ grid: true });
-  console.log(gameMap.gifs.get(`(1,1)`));
+  console.log(gameMap.layers);
+  // gameMap.insertUnit(ECountry.ORANGE_STAR, EUnit.MECH, 2, 1);
+  // gameMap.render({ grid: true });
+  // console.log(gameMap.gifs.get(`(1,1)`));
   // gameMap.units.forEach((x) => console.log(x));
 
   // console.log("buildings:", gameMap.buildings);

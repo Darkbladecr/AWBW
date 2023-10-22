@@ -1,7 +1,6 @@
-import { ParsedFrame, decompressFrames, parseGIF } from "gifuct-js";
+import { ParsedFrame } from "gifuct-js";
 
-class GifLoader {
-  uri: string;
+class GifPlayer {
   loadedFrames: ParsedFrame[] = [];
   frameIndex = 0;
   initialFrameData: ImageData | undefined;
@@ -25,36 +24,29 @@ class GifLoader {
   fullCtx: CanvasRenderingContext2D;
 
   constructor(
-    uri: string,
+    frames: ParsedFrame[],
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number,
     autoplay = true
   ) {
-    this.uri = uri;
+    this.loadedFrames = frames;
+    this.width = frames[0].dims.width;
+    this.height = frames[0].dims.height;
+
     this.posX = x;
     this.posY = y;
     this.autoplay = autoplay;
 
     this.ctx = ctx;
+
     this.diffCanvas = document.createElement("canvas");
     this.diffCtx = this.diffCanvas.getContext("2d") as CanvasRenderingContext2D;
+
     this.fullCanvas = document.createElement("canvas");
     this.fullCtx = this.fullCanvas.getContext("2d", {
       willReadFrequently: true,
     }) as CanvasRenderingContext2D;
-  }
-
-  async init() {
-    const resp = await fetch(this.uri);
-    const buff = await resp.arrayBuffer();
-    const gif = parseGIF(buff);
-    const frames = decompressFrames(gif, true);
-    this.loadedFrames = frames;
-
-    this.width = frames[0].dims.width;
-    this.height = frames[0].dims.height;
-
     this.fullCanvas.width = this.width;
     this.fullCanvas.height = this.height;
 
@@ -67,8 +59,6 @@ class GifLoader {
       // generate first frame
       this._renderFrame();
     }
-
-    return this;
   }
 
   playPause() {
@@ -165,4 +155,4 @@ class GifLoader {
   }
 }
 
-export default GifLoader;
+export default GifPlayer;

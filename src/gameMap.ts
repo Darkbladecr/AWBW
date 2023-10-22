@@ -1,5 +1,7 @@
-import GifLoader from "./gifLoader";
+import { ParsedFrame, decompressFrames, parseGIF } from "gifuct-js";
+import GifPlayer from "./GifPlayer";
 import Building from "./models/Building";
+import Terrain from "./models/Terrain";
 import Unit from "./models/Unit";
 import {
   EMapStyle,
@@ -20,17 +22,36 @@ interface IAssets {
 }
 
 interface IRenderArgs {
-  staticTerrain?: boolean;
-  dynamicTerrain?: boolean;
-  units?: boolean;
+  layers?: ELayer[];
   grid?: boolean;
 }
 
-interface ICache {
-  static: ImageData | undefined;
-  dynamic: ImageData | undefined;
-  units: ImageData | undefined;
+type SpriteType = Terrain | Building | Unit;
+
+interface IMapLayer<T extends SpriteType> {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  imageData: ImageData | undefined;
+  sprites: (T | null)[][];
 }
+
+type GameMapLayers = [
+  IMapLayer<Terrain>,
+  IMapLayer<Building>,
+  IMapLayer<Unit>,
+  IMapLayer<any>,
+  IMapLayer<any>
+];
+
+enum ELayer {
+  STATIC,
+  DYNAMIC,
+  UNITS,
+  ATTRIBUTES,
+  UI,
+}
+
+// type MapLayers = [ETerrain, Building | null, Unit | null];
 
 class GameMap {
   id: string;
@@ -38,31 +59,26 @@ class GameMap {
   height: number;
   grid = 16;
   padding = 4;
-  terrainMap: number[][];
+  // map: MapLayers[][];
+  layers!: GameMapLayers;
+  layerLabels = ["static", "dynamic", "units", "attributes", "ui"];
   buildings: Map<string, Building> = new Map();
   mapMetadata: ITerrainMetadata[][];
   units: Map<string, Unit> = new Map();
 
-  gifs: Map<string, GifLoader> = new Map();
+  gifs: Map<string, GifPlayer> = new Map();
 
   assets: IAssets;
-  cache: ICache = {
-    static: undefined,
-    dynamic: undefined,
-    units: undefined,
-  };
 
   style: EMapStyle = EMapStyle.ANIMATED;
-  canvas!: HTMLCanvasElement;
-  ctx!: CanvasRenderingContext2D;
 
   constructor(id: string, width: number, height: number) {
     this.id = id;
     this.width = width;
     this.height = height;
-    this.terrainMap = Array.from({ length: height }, () =>
-      Array(width).fill(null)
-    );
+    // this.map = Array.from({ length: this.height }, () =>
+    //   Array.from({ length: this.width }, () => [0, null, null])
+    // );
     this.mapMetadata = Array.from({ length: height }, () =>
       Array(width).fill(null)
     );
@@ -86,6 +102,8 @@ class GameMap {
       )
     );
 
+    const terrainANIFrames = await Promise.all(terrainANI.map(this._decodeGif));
+
     for (let i = 0; i < terrainAW1.length; i++) {
       let index: ETerrain = i + 1;
       // fix for deleted sprites
@@ -103,6 +121,7 @@ class GameMap {
           index = index + (181 - 176) - 1;
         }
       }
+
       if (this._isDynamicTerrain(index)) {
         this.assets.terrain.dynamic.set(index, {
           ...getTerrainMetadata(index),
@@ -111,6 +130,7 @@ class GameMap {
             [EMapStyle.AW2]: terrainAW2[i],
             [EMapStyle.ANIMATED]: terrainANI[i],
           },
+          frames: terrainANIFrames[i],
         });
       } else {
         this.assets.terrain.static.set(index, {
@@ -120,6 +140,7 @@ class GameMap {
             [EMapStyle.AW2]: terrainAW2[i],
             [EMapStyle.ANIMATED]: terrainANI[i],
           },
+          frames: terrainANIFrames[i],
         });
       }
     }
@@ -130,6 +151,8 @@ class GameMap {
       )
     );
 
+    const unitANIFrames = await Promise.all(unitANI.map(this._decodeGif));
+
     for (let i = 0; i < unitAW1.length; i++) {
       const index = i + 1;
       this.assets.units.set(index, {
@@ -139,6 +162,7 @@ class GameMap {
           [EMapStyle.AW2]: unitAW2[i],
           [EMapStyle.ANIMATED]: unitANI[i],
         },
+        frames: unitANIFrames[i],
       });
     }
 
@@ -155,20 +179,53 @@ class GameMap {
     return true;
   }
 
+  private async _decodeGif(img: HTMLImageElement | string) {
+    const uri = typeof img === "string" ? img : img.src;
+    const resp = await fetch(uri);
+    const buff = await resp.arrayBuffer();
+    const gif = parseGIF(buff);
+    const frames = decompressFrames(gif, true);
+    return frames;
+  }
+
   private _setupCanvas(id: string) {
-    const canvas = document.createElement("canvas");
-    canvas.id = id;
     const el = document.getElementById(id);
     if (!el) {
       throw new Error(`#${id} not found on page`);
     }
-    el.replaceWith(canvas);
-    canvas.width = this.width * this.grid + this.padding * 2;
-    canvas.height = this.height * this.grid + this.padding * 2;
-    this.canvas = canvas;
-    this.ctx = canvas.getContext("2d", {
-      willReadFrequently: true,
-    }) as CanvasRenderingContext2D;
+    el.innerHTML = "";
+    let layers: IMapLayer<any>[] = [];
+    for (let i = 0; i < this.layerLabels.length; i++) {
+      const label = this.layerLabels[i];
+
+      const canvas = document.createElement("canvas");
+      canvas.id = label;
+      canvas.classList.add("layer");
+      canvas.style["zIndex"] = i.toString();
+      canvas.width = this.width * this.grid + this.padding * 2;
+      canvas.height = this.height * this.grid + this.padding * 2;
+
+      el.appendChild(canvas);
+
+      const ctx = canvas.getContext("2d", {
+        willReadFrequently: true,
+      }) as CanvasRenderingContext2D;
+      layers.push({
+        canvas,
+        ctx,
+        imageData: ctx.getImageData(0, 0, canvas.width, canvas.height),
+        sprites: Array.from({ length: this.height }, () =>
+          Array(this.width).fill(null)
+        ),
+      });
+    }
+    this.layers = [
+      layers[ELayer.STATIC],
+      layers[ELayer.DYNAMIC],
+      layers[ELayer.UNITS],
+      layers[ELayer.ATTRIBUTES],
+      layers[ELayer.UI],
+    ];
   }
 
   private _loadAssets(
@@ -188,134 +245,107 @@ class GameMap {
   }
 
   drawGrid() {
+    const ctx = this.layers[ELayer.UI].ctx;
     // vertical
-    this.ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
     for (let i = 0; i < this.width + 1; i++) {
       const iPx = i * this.grid + this.padding;
       const heightPx = this.height * this.grid + this.padding;
-      this.ctx.beginPath();
-      this.ctx.moveTo(iPx, 0 + this.padding);
-      this.ctx.lineTo(iPx, heightPx);
-      this.ctx.stroke();
-      this.ctx.closePath();
+      ctx.beginPath();
+      ctx.moveTo(iPx, 0 + this.padding);
+      ctx.lineTo(iPx, heightPx);
+      ctx.stroke();
+      ctx.closePath();
     }
     // horizontal
     for (let i = 0; i < this.height + 1; i++) {
       const iPx = i * this.grid + this.padding;
       const widthPx = this.width * this.grid + this.padding;
-      this.ctx.beginPath();
-      this.ctx.moveTo(0 + this.padding, iPx);
-      this.ctx.lineTo(widthPx, iPx);
-      this.ctx.stroke();
-      this.ctx.closePath();
+      ctx.beginPath();
+      ctx.moveTo(0 + this.padding, iPx);
+      ctx.lineTo(widthPx, iPx);
+      ctx.stroke();
+      ctx.closePath();
     }
-    this.ctx.strokeStyle = "#000";
+    ctx.strokeStyle = "#000";
   }
 
   render(args?: IRenderArgs) {
-    const staticTerrain = args?.staticTerrain ?? true;
-    const dynamicTerrain = args?.dynamicTerrain ?? true;
-    const units = args?.units ?? true;
+    const layersToRender = args?.layers ?? [];
     const grid = args?.grid ?? false;
 
-    // terrain
-    if (staticTerrain) {
-      if (!this.cache.static) {
-        for (let x = 0; x < this.width; x++) {
-          for (let y = 0; y < this.height; y++) {
-            const img = this.assets.terrain.static.get(this.terrainMap[y][x])
-              ?.sprite[this.style];
-            if (!img) {
-              continue;
-            }
-            const offset = img.height - this.grid;
-            this.ctx.drawImage(
-              img,
-              x * this.grid + this.padding,
-              y * this.grid - offset + this.padding
-            );
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        for (let layerId = 0; layerId < this.layers.length; layerId++) {
+          if (layersToRender.length > 0 && !layersToRender.includes(layerId)) {
+            continue;
           }
-        }
-        const imageData = this.ctx.getImageData(0, 0, this.width, this.height);
-        this.cache.static = imageData;
-      } else {
-        this.ctx.putImageData(this.cache.static, 0, 0);
-      }
-    }
+          const layer = this.layers[layerId];
+          const item = layer.sprites[y][x];
+          if (!item) {
+            continue;
+          }
 
-    // buildings
-    if (dynamicTerrain) {
-      for (const building of this.buildings.values()) {
-        const img = this.assets.terrain.dynamic.get(building.spriteIdx)?.sprite[
-          this.style
-        ];
-        if (!img) {
-          continue;
-        }
-        const offset = img.height - this.grid;
-        if (this.style === EMapStyle.ANIMATED) {
-          const gifLoader = new GifLoader(
-            img.src,
-            this.ctx,
-            building.x * this.grid + this.padding,
-            building.y * this.grid - offset + this.padding
-          );
-          const existingGif = this.gifs.get(
-            this._mapKey(building.x, building.y)
-          );
-          if (existingGif) {
-            existingGif.autoplay = false;
+          let offset = 0;
+          let img: HTMLImageElement | undefined;
+          let frames: ParsedFrame[] = [];
+
+          if (item instanceof Terrain && !(item instanceof Building)) {
+            const terrainMetadata = this.assets.terrain.static.get(
+              item.spriteIdx
+            );
+            if (terrainMetadata) {
+              frames = terrainMetadata.frames;
+              img = terrainMetadata.sprite[this.style];
+              if (img) {
+                offset = img.height - this.grid;
+              }
+            }
+          } else if (item instanceof Building) {
+            const terrainMetadata = this.assets.terrain.dynamic.get(
+              item.spriteIdx
+            );
+            if (terrainMetadata) {
+              frames = terrainMetadata.frames;
+              img = terrainMetadata.sprite[this.style];
+              if (img) {
+                offset = img.height - this.grid;
+              }
+            }
+          } else if (item instanceof Unit) {
+            const unitMetadata = this.assets.units.get(item.spriteIdx);
+            if (unitMetadata) {
+              frames = unitMetadata.frames;
+              img = unitMetadata.sprite[this.style];
+              if (img) {
+                offset = img.height - this.grid;
+              }
+            }
           }
-          this.gifs.set(this._mapKey(building.x, building.y), gifLoader);
-          gifLoader.init();
-        } else {
-          this.ctx.drawImage(
-            img,
-            building.x * this.grid + this.padding,
-            building.y * this.grid - offset + this.padding
-          );
+          if (!img) {
+            continue;
+          }
+          const posX = item.x * this.grid + this.padding;
+          const posY = item.y * this.grid - offset + this.padding;
+          if (this.style === EMapStyle.ANIMATED) {
+            const gifPlayer = new GifPlayer(
+              frames,
+              this.layers[layerId].ctx,
+              posX,
+              posY,
+              this.style === EMapStyle.ANIMATED
+            );
+          } else {
+            this.layers[layerId].ctx.drawImage(img, posX, posY);
+          }
         }
       }
-      const imageData = this.ctx.getImageData(0, 0, this.width, this.height);
-      this.cache.dynamic = imageData;
     }
-    // units
-    if (units) {
-      for (const unit of this.units.values()) {
-        const img = this.assets.units.get(unit.spriteIdx)?.sprite[this.style];
-        if (!img) {
-          continue;
-        }
-        const offset = img.height - this.grid;
-        if (this.style === EMapStyle.ANIMATED) {
-          const gifLoader = new GifLoader(
-            img.src,
-            this.ctx,
-            unit.x * this.grid + this.padding,
-            unit.y * this.grid - offset + this.padding
-          );
-          const existingGif = this.gifs.get(this._mapKey(unit.x, unit.y));
-          if (existingGif) {
-            existingGif.autoplay = false;
-          }
-          this.gifs.set(this._mapKey(unit.x, unit.y), gifLoader);
-          gifLoader.init();
-        } else {
-          this.ctx.drawImage(
-            img,
-            unit.x * this.grid + this.padding,
-            unit.y * this.grid - offset + this.padding
-          );
-        }
-      }
-      const imageData = this.ctx.getImageData(0, 0, this.width, this.height);
-      this.cache.dynamic = imageData;
-    }
-    this.canvas.style.background = "#000";
 
     if (grid) {
       this.drawGrid();
     }
+    this.layers[ELayer.STATIC].canvas.style.backgroundColor = "#000";
   }
 
   importMap(map: number[][] | string) {
@@ -325,36 +355,49 @@ class GameMap {
 
     this.height = map.length;
     this.width = map[0].length;
-    this.terrainMap = Array.from({ length: this.height }, () =>
-      Array(this.width).fill(null)
-    );
+
+    this._setupCanvas(this.id);
+
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         const index = map[y][x];
         this.insertTerrain(index, x, y);
       }
     }
-
-    this._setupCanvas(this.id);
   }
+
+  // insertTerrain(index: ETerrain, x: number, y: number) {
+  //   if (
+  //     index < ETerrain.NEUTRALCITY ||
+  //     (index >= ETerrain.VPIPE && index <= ETerrain.WPIPEEND)
+  //   ) {
+  //     this.map[y][x][ELayer.STATIC] = index;
+  //   } else {
+  //     this.map[y][x][ELayer.STATIC] = ETerrain.NULL;
+  //     const building = new Building(index, x, y);
+  //     this.map[y][x][ELayer.DYNAMIC] = building;
+  //     this.buildings.set(this._mapKey(x, y), building);
+  //   }
+  //   this.mapMetadata[y][x] = getTerrainMetadata(index);
+  // }
 
   insertTerrain(index: ETerrain, x: number, y: number) {
     if (
       index < ETerrain.NEUTRALCITY ||
       (index >= ETerrain.VPIPE && index <= ETerrain.WPIPEEND)
     ) {
-      this.terrainMap[y][x] = index;
+      const terrain = new Terrain(index, x, y);
+      this.layers[ELayer.STATIC].sprites[y][x] = terrain;
     } else {
-      this.terrainMap[y][x] = 0;
       const building = new Building(index, x, y);
-      this.buildings.set(this._mapKey(x, y), building);
+      this.layers[ELayer.DYNAMIC].sprites[y][x] = building;
     }
     this.mapMetadata[y][x] = getTerrainMetadata(index);
   }
 
   insertUnit(countryIdx: ECountry, unitIdx: EUnit, x: number, y: number) {
     const unit = new Unit(countryIdx, unitIdx, x, y);
-    this.units.set(this._mapKey(x, y), unit);
+    this.layers[ELayer.UNITS].sprites[y][x] = unit;
   }
 
   private _mapKey(x: number, y: number) {

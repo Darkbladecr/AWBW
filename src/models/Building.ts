@@ -1,127 +1,110 @@
 import { ECountry, ETerrain } from "../sprites";
+import Terrain from "./Terrain";
 
-export default class Building {
-  spriteIdx: number;
+export default class Building extends Terrain {
   country: ECountry;
   capture = 20;
   // TODO: resupply metadata
-  x: number;
-  y: number;
 
   constructor(terrainIdx: ETerrain, x: number, y: number, capture?: number) {
-    this.spriteIdx = terrainIdx;
+    super(terrainIdx, x, y);
     this.country = this._getCountry();
-    this.x = x;
-    this.y = y;
     this.capture ?? capture;
   }
 
   private _getCountry() {
+    const id = super.spriteIdx;
     if (
-      this.spriteIdx === ETerrain.NEUTRALLAB ||
-      this.spriteIdx === ETerrain.NEUTRALCOMTOWER ||
-      (this.spriteIdx >= ETerrain.NEUTRALCITY &&
-        this.spriteIdx <= ETerrain.NEUTRALPORT)
+      id === ETerrain.NEUTRALLAB ||
+      id === ETerrain.NEUTRALCOMTOWER ||
+      (id >= ETerrain.NEUTRALCITY && id <= ETerrain.NEUTRALPORT)
     ) {
       return ECountry.NEUTRAL;
     } else if (
-      this.spriteIdx === ETerrain.ORANGESTARLAB ||
-      this.spriteIdx === ETerrain.ORANGESTARCOMTOWER ||
-      (this.spriteIdx >= ETerrain.ORANGESTARCITY &&
-        this.spriteIdx <= ETerrain.ORANGESTARHQ)
+      id === ETerrain.ORANGESTARLAB ||
+      id === ETerrain.ORANGESTARCOMTOWER ||
+      (id >= ETerrain.ORANGESTARCITY && id <= ETerrain.ORANGESTARHQ)
     ) {
       return ECountry.ORANGE_STAR;
     } else if (
-      this.spriteIdx === ETerrain.BLUEMOONLAB ||
-      this.spriteIdx === ETerrain.BLUEMOONCOMTOWER ||
-      (this.spriteIdx >= ETerrain.BLUEMOONCITY &&
-        this.spriteIdx <= ETerrain.BLUEMOONHQ)
+      id === ETerrain.BLUEMOONLAB ||
+      id === ETerrain.BLUEMOONCOMTOWER ||
+      (id >= ETerrain.BLUEMOONCITY && id <= ETerrain.BLUEMOONHQ)
     ) {
       return ECountry.BLUE_MOON;
     } else if (
-      this.spriteIdx === ETerrain.GREENEARTHLAB ||
-      this.spriteIdx === ETerrain.GREENEARTHCOMTOWER ||
-      (this.spriteIdx >= ETerrain.GREENEARTHCITY &&
-        this.spriteIdx <= ETerrain.GREENEARTHHQ)
+      id === ETerrain.GREENEARTHLAB ||
+      id === ETerrain.GREENEARTHCOMTOWER ||
+      (id >= ETerrain.GREENEARTHCITY && id <= ETerrain.GREENEARTHHQ)
     ) {
       return ECountry.GREEN_EARTH;
     } else if (
-      this.spriteIdx === ETerrain.YELLOWCOMETLAB ||
-      this.spriteIdx === ETerrain.YELLOWCOMETCOMTOWER ||
-      (this.spriteIdx >= ETerrain.YELLOWCOMETCITY &&
-        this.spriteIdx <= ETerrain.YELLOWCOMETHQ)
+      id === ETerrain.YELLOWCOMETLAB ||
+      id === ETerrain.YELLOWCOMETCOMTOWER ||
+      (id >= ETerrain.YELLOWCOMETCITY && id <= ETerrain.YELLOWCOMETHQ)
     ) {
       return ECountry.YELLOW_COMET;
     } else if (
-      this.spriteIdx === ETerrain.REDFIRELAB ||
-      this.spriteIdx === ETerrain.REDFIRECOMTOWER ||
-      (this.spriteIdx >= ETerrain.REDFIRECITY &&
-        this.spriteIdx <= ETerrain.REDFIREHQ)
+      id === ETerrain.REDFIRELAB ||
+      id === ETerrain.REDFIRECOMTOWER ||
+      (id >= ETerrain.REDFIRECITY && id <= ETerrain.REDFIREHQ)
     ) {
       return ECountry.RED_FIRE;
     } else if (
-      this.spriteIdx === ETerrain.GREYSKYLAB ||
-      this.spriteIdx === ETerrain.GREYSKYCOMTOWER ||
-      (this.spriteIdx >= ETerrain.GREYSKYAIRPORT &&
-        this.spriteIdx <= ETerrain.GREYSKYHQ)
+      id === ETerrain.GREYSKYLAB ||
+      id === ETerrain.GREYSKYCOMTOWER ||
+      (id >= ETerrain.GREYSKYAIRPORT && id <= ETerrain.GREYSKYHQ)
     ) {
       return ECountry.GREY_SKY;
     } else if (
-      this.spriteIdx === ETerrain.BLACKHOLELAB ||
-      this.spriteIdx === ETerrain.BLACKHOLECOMTOWER ||
-      (this.spriteIdx >= ETerrain.BLACKHOLECITY &&
-        this.spriteIdx <= ETerrain.BLACKHOLEHQ)
+      id === ETerrain.BLACKHOLELAB ||
+      id === ETerrain.BLACKHOLECOMTOWER ||
+      (id >= ETerrain.BLACKHOLECITY && id <= ETerrain.BLACKHOLEHQ)
     ) {
       return ECountry.BLACK_HOLE;
     } else if (
-      this.spriteIdx === ETerrain.BROWNDESERTLAB ||
-      this.spriteIdx === ETerrain.BROWNDESERTCOMTOWER ||
-      (this.spriteIdx >= ETerrain.BROWNDESERTCITY &&
-        this.spriteIdx <= ETerrain.BROWNDESERTHQ)
+      id === ETerrain.BROWNDESERTLAB ||
+      id === ETerrain.BROWNDESERTCOMTOWER ||
+      (id >= ETerrain.BROWNDESERTCITY && id <= ETerrain.BROWNDESERTHQ)
     ) {
       return ECountry.BROWN_DESERT;
     } else if (
-      this.spriteIdx === ETerrain.AMBERBLAZELAB ||
-      this.spriteIdx === ETerrain.AMBERBLAZECOMTOWER ||
-      (this.spriteIdx >= ETerrain.AMBERBLAZEAIRPORT &&
-        this.spriteIdx <= ETerrain.AMBERBLAZEPORT)
+      id === ETerrain.AMBERBLAZELAB ||
+      id === ETerrain.AMBERBLAZECOMTOWER ||
+      (id >= ETerrain.AMBERBLAZEAIRPORT && id <= ETerrain.AMBERBLAZEPORT)
     ) {
       return ECountry.AMBER_BLAZE;
     } else if (
-      this.spriteIdx === ETerrain.JADESUNLAB ||
-      this.spriteIdx === ETerrain.JADESUNCOMTOWER ||
-      (this.spriteIdx >= ETerrain.JADESUNAIRPORT &&
-        this.spriteIdx <= ETerrain.JADESUNPORT)
+      id === ETerrain.JADESUNLAB ||
+      id === ETerrain.JADESUNCOMTOWER ||
+      (id >= ETerrain.JADESUNAIRPORT && id <= ETerrain.JADESUNPORT)
     ) {
       return ECountry.JADE_SUN;
     } else if (
-      this.spriteIdx >= ETerrain.COBALTICEAIRPORT &&
-      this.spriteIdx <= ETerrain.COBALTICEPORT
+      id >= ETerrain.COBALTICEAIRPORT &&
+      id <= ETerrain.COBALTICEPORT
     ) {
       return ECountry.COBALT_ICE;
     } else if (
-      this.spriteIdx >= ETerrain.PINKCOSMOSAIRPORT &&
-      this.spriteIdx <= ETerrain.PINKCOSMOSPORT
+      id >= ETerrain.PINKCOSMOSAIRPORT &&
+      id <= ETerrain.PINKCOSMOSPORT
     ) {
       return ECountry.PINK_COSMOS;
     } else if (
-      this.spriteIdx >= ETerrain.TEALGALAXYAIRPORT &&
-      this.spriteIdx <= ETerrain.TEALGALAXYPORT
+      id >= ETerrain.TEALGALAXYAIRPORT &&
+      id <= ETerrain.TEALGALAXYPORT
     ) {
       return ECountry.TEAL_GALAXY;
     } else if (
-      this.spriteIdx >= ETerrain.PURPLELIGHTNINGAIRPORT &&
-      this.spriteIdx <= ETerrain.PURPLELIGHTNINGPORT
+      id >= ETerrain.PURPLELIGHTNINGAIRPORT &&
+      id <= ETerrain.PURPLELIGHTNINGPORT
     ) {
       return ECountry.PURPLE_LIGHTNING;
-    } else if (
-      this.spriteIdx >= ETerrain.ACIDRAINAIRPORT &&
-      this.spriteIdx <= ETerrain.ACIDRAINPORT
-    ) {
+    } else if (id >= ETerrain.ACIDRAINAIRPORT && id <= ETerrain.ACIDRAINPORT) {
       return ECountry.ACID_RAIN;
     } else if (
-      this.spriteIdx >= ETerrain.WHITENOVAAIRPORT &&
-      this.spriteIdx <= ETerrain.WHITENOVAPORT
+      id >= ETerrain.WHITENOVAAIRPORT &&
+      id <= ETerrain.WHITENOVAPORT
     ) {
       return ECountry.WHITE_NOVA;
     } else {

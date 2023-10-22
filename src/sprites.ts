@@ -172,6 +172,7 @@ export const terrain = [
 ];
 
 export enum ETerrain {
+  NULL,
   PLAIN = 1,
   MOUNTAIN,
   WOOD,

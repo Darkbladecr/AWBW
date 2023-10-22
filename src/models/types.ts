@@ -1,3 +1,4 @@
+import { ParsedFrame } from "gifuct-js";
 import { ETerrain, terrain } from "../sprites";
 
 export enum EWeather {
@@ -47,12 +48,16 @@ export enum EMapStyle {
 
 export type SpriteMap = Record<EMapStyle, HTMLImageElement | undefined>;
 
-export interface ITerrainMetadata {
-  spriteIdx: ETerrain;
+export interface ISpriteMetadata {
   name: string;
+  sprite: SpriteMap;
+  frames: ParsedFrame[];
+}
+
+export interface ITerrainMetadata extends ISpriteMetadata {
+  spriteIdx: ETerrain;
   defense: number;
   movement: [movementArr, movementArr, movementArr];
-  sprite: SpriteMap;
 }
 
 export function getTerrainMetadata(index: ETerrain) {
@@ -74,6 +79,7 @@ export function getTerrainMetadata(index: ETerrain) {
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   };
   if (
     index === ETerrain.PLAIN ||
@@ -262,8 +268,7 @@ export enum EUnit {
   TANK,
 }
 
-export interface IUnitMetadata {
-  name: string;
+export interface IUnitMetadata extends ISpriteMetadata {
   mp: number;
   ammo: number;
   fuel: number;
@@ -276,7 +281,6 @@ export interface IUnitMetadata {
   storage: number;
   storageUnits: EUnit[];
   cost: number;
-  sprite: SpriteMap;
 }
 
 export const unitMetadata: IUnitMetadata[] = [
@@ -299,6 +303,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "APC",
@@ -319,6 +324,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Artillery",
@@ -339,6 +345,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "B-Copter",
@@ -359,6 +366,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Battleship",
@@ -379,6 +387,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Black Boat",
@@ -399,6 +408,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Black Bomb",
@@ -419,6 +429,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Bomber",
@@ -439,6 +450,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Carrier",
@@ -459,6 +471,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Cruiser",
@@ -479,6 +492,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Fighter",
@@ -499,6 +513,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Infantry",
@@ -519,6 +534,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Lander",
@@ -552,6 +568,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Md.Tank",
@@ -572,6 +589,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Mech",
@@ -592,6 +610,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Mega Tank",
@@ -612,6 +631,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Missile",
@@ -632,6 +652,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Neotank",
@@ -652,6 +673,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Piperunner",
@@ -672,6 +694,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Recon",
@@ -692,6 +715,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Rocket",
@@ -712,6 +736,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Stealth",
@@ -732,6 +757,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Sub",
@@ -752,6 +778,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "T-Copter",
@@ -772,6 +799,7 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
   {
     name: "Tank",
@@ -792,5 +820,6 @@ export const unitMetadata: IUnitMetadata[] = [
       [EMapStyle.AW2]: undefined,
       [EMapStyle.ANIMATED]: undefined,
     },
+    frames: [],
   },
 ];
