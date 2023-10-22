@@ -11,7 +11,6 @@ export default class Unit extends Sprite {
   spriteIdx: number;
   country: ECountry;
   unit: EUnit;
-  metadata: IUnitMetadata;
   name: string;
   hp: number;
   ammo: number;
@@ -21,7 +20,6 @@ export default class Unit extends Sprite {
   y: number;
 
   constructor(
-    assets: IAssets["units"],
     country: ECountry,
     unit: EUnit,
     x: number,
@@ -40,12 +38,9 @@ export default class Unit extends Sprite {
     this.hp = hp ?? 10;
     this.ammo = ammo ?? 99;
     this.fuel = fuel ?? 99;
+  }
 
-    this.metadata = unitMetadata[unit - 1];
-    const asset = assets.get(unit);
-    if (asset) {
-      this.metadata.sprite = asset.sprite;
-      this.metadata.frames = asset.frames;
-    }
+  get metadata(): IUnitMetadata {
+    return unitMetadata[this.spriteIdx - 1];
   }
 }

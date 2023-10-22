@@ -51,6 +51,7 @@ async function main() {
   gameMap.insertUnit(ECountry.ORANGE_STAR, EUnit.INFANTRY, 0, 2);
   gameMap.render({ grid: true });
   gameMap.animate(0);
+  console.log(gameMap.assets.units.get(EUnit.INFANTRY));
   // gameMap.insertUnit(ECountry.ORANGE_STAR, EUnit.MECH, 2, 1);
   // gameMap.render({ grid: true });
   // console.log(gameMap.gifs.get(`(1,1)`));

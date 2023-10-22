@@ -49,12 +49,12 @@ export enum EMapStyle {
 export type SpriteMap = Record<EMapStyle, HTMLImageElement | undefined>;
 
 export interface ISpriteMetadata {
-  name: string;
   sprite: SpriteMap;
   frames: ParsedFrame[];
 }
 
-export interface ITerrainMetadata extends ISpriteMetadata {
+export interface ITerrainMetadata {
+  name: string;
   spriteIdx: ETerrain;
   defense: number;
   movement: [movementArr, movementArr, movementArr];
@@ -74,12 +74,6 @@ export function getTerrainMetadata(index: ETerrain) {
     name: terrain[terrainIdx],
     defense: 0,
     movement: [nullMovement, nullMovement, nullMovement],
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   };
   if (
     index === ETerrain.PLAIN ||
@@ -268,7 +262,8 @@ export enum EUnit {
   TANK,
 }
 
-export interface IUnitMetadata extends ISpriteMetadata {
+export interface IUnitMetadata {
+  name: string;
   mp: number;
   ammo: number;
   fuel: number;
@@ -298,12 +293,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 8000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "APC",
@@ -319,12 +308,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 1,
     storageUnits: [EUnit.INFANTRY, EUnit.MECH],
     cost: 5000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Artillery",
@@ -340,12 +323,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 6000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "B-Copter",
@@ -361,12 +338,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 9000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Battleship",
@@ -382,12 +353,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 28000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Black Boat",
@@ -403,12 +368,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 2,
     storageUnits: [EUnit.INFANTRY, EUnit.MECH],
     cost: 7500,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Black Bomb",
@@ -424,12 +383,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 25000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Bomber",
@@ -445,12 +398,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 22000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Carrier",
@@ -466,12 +413,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 30000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Cruiser",
@@ -487,12 +428,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 2,
     storageUnits: [EUnit.BCOPTER],
     cost: 18000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Fighter",
@@ -508,12 +443,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 20000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Infantry",
@@ -529,12 +458,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 1000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Lander",
@@ -563,12 +486,6 @@ export const unitMetadata: IUnitMetadata[] = [
       EUnit.TANK,
     ],
     cost: 12000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Md.Tank",
@@ -584,12 +501,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 16000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Mech",
@@ -605,12 +516,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 3000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Mega Tank",
@@ -626,12 +531,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 28000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Missile",
@@ -647,12 +546,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 12000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Neotank",
@@ -668,12 +561,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 22000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Piperunner",
@@ -689,12 +576,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 20000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Recon",
@@ -710,12 +591,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 4000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Rocket",
@@ -731,12 +606,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 15000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Stealth",
@@ -752,12 +621,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 24000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Sub",
@@ -773,12 +636,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 20000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "T-Copter",
@@ -794,12 +651,6 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 1,
     storageUnits: [EUnit.INFANTRY, EUnit.MECH],
     cost: 5000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
   {
     name: "Tank",
@@ -815,11 +666,5 @@ export const unitMetadata: IUnitMetadata[] = [
     storage: 0,
     storageUnits: [],
     cost: 7000,
-    sprite: {
-      [EMapStyle.AW1]: undefined,
-      [EMapStyle.AW2]: undefined,
-      [EMapStyle.ANIMATED]: undefined,
-    },
-    frames: [],
   },
 ];

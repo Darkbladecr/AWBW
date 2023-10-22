@@ -6,6 +6,7 @@ import Unit from "./models/Unit";
 import {
   EMapStyle,
   EUnit,
+  ISpriteMetadata,
   ITerrainMetadata,
   IUnitMetadata,
   getTerrainMetadata,
@@ -13,12 +14,14 @@ import {
 } from "./models/types";
 import { terrain, ETerrain, countryUnits, ECountry } from "./sprites";
 
+type TerrainSpriteMetadata = ITerrainMetadata & ISpriteMetadata;
+type UnitSpriteMetadata = IUnitMetadata & ISpriteMetadata;
+
+type SpriteMetadata = TerrainSpriteMetadata | UnitSpriteMetadata;
+
 export interface IAssets {
-  terrain: {
-    static: Map<ETerrain, ITerrainMetadata>;
-    dynamic: Map<ETerrain, ITerrainMetadata>;
-  };
-  units: Map<EUnit, IUnitMetadata>;
+  terrain: Map<ETerrain, TerrainSpriteMetadata>;
+  units: Map<EUnit, UnitSpriteMetadata>;
 }
 
 interface IRenderArgs {
@@ -85,10 +88,7 @@ class GameMap {
     );
 
     this.assets = {
-      terrain: {
-        static: new Map(),
-        dynamic: new Map(),
-      },
+      terrain: new Map(),
       units: new Map(),
     };
 
@@ -99,7 +99,7 @@ class GameMap {
     const styles = [EMapStyle.AW1, EMapStyle.AW2, EMapStyle.ANIMATED];
     const [terrainAW1, terrainAW2, terrainANI] = await Promise.all(
       styles.map((style) =>
-        Promise.all(this._loadAssets("terrain", style, terrain))
+        Promise.all(this._loadGifs("terrain", style, terrain))
       )
     );
 
@@ -123,32 +123,20 @@ class GameMap {
         }
       }
 
-      if (this._isDynamicTerrain(index)) {
-        this.assets.terrain.dynamic.set(index, {
-          ...getTerrainMetadata(index),
-          sprite: {
-            [EMapStyle.AW1]: terrainAW1[i],
-            [EMapStyle.AW2]: terrainAW2[i],
-            [EMapStyle.ANIMATED]: terrainANI[i],
-          },
-          frames: terrainANIFrames[i],
-        });
-      } else {
-        this.assets.terrain.static.set(index, {
-          ...getTerrainMetadata(index),
-          sprite: {
-            [EMapStyle.AW1]: terrainAW1[i],
-            [EMapStyle.AW2]: terrainAW2[i],
-            [EMapStyle.ANIMATED]: terrainANI[i],
-          },
-          frames: terrainANIFrames[i],
-        });
-      }
+      this.assets.terrain.set(index, {
+        ...getTerrainMetadata(index),
+        sprite: {
+          [EMapStyle.AW1]: terrainAW1[i],
+          [EMapStyle.AW2]: terrainAW2[i],
+          [EMapStyle.ANIMATED]: terrainANI[i],
+        },
+        frames: terrainANIFrames[i],
+      });
     }
 
     const [unitAW1, unitAW2, unitANI] = await Promise.all(
       styles.map((style) =>
-        Promise.all(this._loadAssets("units", style, countryUnits))
+        Promise.all(this._loadGifs("units", style, countryUnits))
       )
     );
 
@@ -168,16 +156,6 @@ class GameMap {
     }
 
     return this;
-  }
-
-  private _isDynamicTerrain(index: ETerrain) {
-    if (
-      index < ETerrain.NEUTRALCITY ||
-      (index >= ETerrain.VPIPE && index <= ETerrain.WPIPEEND)
-    ) {
-      return false;
-    }
-    return true;
   }
 
   private async _decodeGif(img: HTMLImageElement | string) {
@@ -229,7 +207,7 @@ class GameMap {
     ];
   }
 
-  private _loadAssets(
+  private _loadGifs(
     path: string,
     style: string,
     filenames: string[]
@@ -290,18 +268,8 @@ class GameMap {
           let img: HTMLImageElement | undefined;
           let frames: ParsedFrame[] = [];
 
-          if (item instanceof Terrain && !(item instanceof Building)) {
-            const terrainMetadata = this.assets.terrain.static.get(
-              item.spriteIdx
-            );
-            if (terrainMetadata) {
-              frames = terrainMetadata.frames;
-              img = terrainMetadata.sprite[this.style];
-            }
-          } else if (item instanceof Building) {
-            const terrainMetadata = this.assets.terrain.dynamic.get(
-              item.spriteIdx
-            );
+          if (item instanceof Terrain) {
+            const terrainMetadata = this.assets.terrain.get(item.spriteIdx);
             if (terrainMetadata) {
               frames = terrainMetadata.frames;
               img = terrainMetadata.sprite[this.style];
@@ -358,42 +326,23 @@ class GameMap {
     }
   }
 
-  // insertTerrain(index: ETerrain, x: number, y: number) {
-  //   if (
-  //     index < ETerrain.NEUTRALCITY ||
-  //     (index >= ETerrain.VPIPE && index <= ETerrain.WPIPEEND)
-  //   ) {
-  //     this.map[y][x][ELayer.STATIC] = index;
-  //   } else {
-  //     this.map[y][x][ELayer.STATIC] = ETerrain.NULL;
-  //     const building = new Building(index, x, y);
-  //     this.map[y][x][ELayer.DYNAMIC] = building;
-  //     this.buildings.set(this._mapKey(x, y), building);
-  //   }
-  //   this.mapMetadata[y][x] = getTerrainMetadata(index);
-  // }
-
   insertTerrain(index: ETerrain, x: number, y: number) {
     if (
       index < ETerrain.NEUTRALCITY ||
       (index >= ETerrain.VPIPE && index <= ETerrain.WPIPEEND)
     ) {
-      const terrain = new Terrain(this.assets.terrain, index, x, y);
+      const terrain = new Terrain(index, x, y);
       this.layers[ELayer.STATIC].sprites[y][x] = terrain;
     } else {
-      const building = new Building(this.assets.terrain, index, x, y);
+      const building = new Building(index, x, y);
       this.layers[ELayer.DYNAMIC].sprites[y][x] = building;
     }
     this.mapMetadata[y][x] = getTerrainMetadata(index);
   }
 
   insertUnit(countryIdx: ECountry, unitIdx: EUnit, x: number, y: number) {
-    const unit = new Unit(this.assets.units, countryIdx, unitIdx, x, y);
+    const unit = new Unit(countryIdx, unitIdx, x, y);
     this.layers[ELayer.UNITS].sprites[y][x] = unit;
-  }
-
-  private _mapKey(x: number, y: number) {
-    return `(${x},${y})`;
   }
 
   animate(timestamp: number) {
@@ -403,46 +352,66 @@ class GameMap {
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         for (let layerId = 0; layerId < this.layerLabels.length; layerId++) {
-          const item = this.layers[layerId].sprites[y][x];
-          if (item) {
-            item.timeElapsed += delta;
-            const frame = item.metadata.frames[item.frameIndex];
-            if (item.timeElapsed > frame.delay) {
-              item.timeElapsed = 0;
-              item.frameIndex += 1;
-              if (item.frameIndex >= item.metadata.frames.length) {
-                item.frameIndex = 0;
-              }
-              const nextFrame = item.metadata.frames[item.frameIndex];
-
-              if (frame.disposalType === 2) {
-                const offset = frame.dims.height - this.grid;
-                const posX = item.x * this.grid + this.padding;
-                const posY = item.y * this.grid - offset + this.padding;
-                this.layers[layerId].ctx.clearRect(
-                  posX,
-                  posY,
-                  frame.dims.width,
-                  frame.dims.height
-                );
-              }
-              const { dims } = nextFrame;
-              const frameImageData = this.layers[
-                ELayer.UNITS
-              ].ctx.createImageData(dims.width, dims.height);
-              frameImageData.data.set(nextFrame.patch);
-
-              const offset = nextFrame.dims.height - this.grid;
-              const posX = item.x * this.grid + this.padding;
-              const posY = item.y * this.grid - offset + this.padding;
-
-              this.layers[layerId].ctx.putImageData(frameImageData, posX, posY);
-            }
-          }
+          this._renderAssetFrame.call(this, delta, layerId, x, y);
         }
       }
     }
     requestAnimationFrame(this.animate.bind(this));
+  }
+
+  private _renderAssetFrame(
+    delta: number,
+    layerId: ELayer,
+    x: number,
+    y: number
+  ) {
+    const item: SpriteType = this.layers[layerId].sprites[y][x];
+    if (item) {
+      item.timeElapsed += delta;
+
+      let asset: SpriteMetadata | undefined;
+      if (item instanceof Terrain) {
+        asset = this.assets.terrain.get(item.spriteIdx);
+      } else {
+        asset = this.assets.units.get(item.spriteIdx);
+      }
+      if (!asset) {
+        throw new Error(`${item} missing from assets`);
+      }
+      const frame = asset.frames[item.frameIndex];
+      if (item.timeElapsed > frame.delay) {
+        item.timeElapsed = 0;
+        item.frameIndex += 1;
+        if (item.frameIndex >= asset.frames.length) {
+          item.frameIndex = 0;
+        }
+        const nextFrame = asset.frames[item.frameIndex];
+
+        if (frame.disposalType === 2) {
+          const offset = frame.dims.height - this.grid;
+          const posX = item.x * this.grid + this.padding;
+          const posY = item.y * this.grid - offset + this.padding;
+          this.layers[layerId].ctx.clearRect(
+            posX,
+            posY,
+            frame.dims.width,
+            frame.dims.height
+          );
+        }
+        const { dims } = nextFrame;
+        const frameImageData = this.layers[ELayer.UNITS].ctx.createImageData(
+          dims.width,
+          dims.height
+        );
+        frameImageData.data.set(nextFrame.patch);
+
+        const offset = nextFrame.dims.height - this.grid;
+        const posX = item.x * this.grid + this.padding;
+        const posY = item.y * this.grid - offset + this.padding;
+
+        this.layers[layerId].ctx.putImageData(frameImageData, posX, posY);
+      }
+    }
   }
 }
 

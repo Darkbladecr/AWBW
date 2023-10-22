@@ -1,4 +1,3 @@
-import { IAssets } from "../gameMap";
 import { ECountry, ETerrain } from "../sprites";
 import Terrain from "./Terrain";
 
@@ -7,14 +6,14 @@ export default class Building extends Terrain {
   capture = 20;
   // TODO: resupply metadata
 
-  constructor(
-    assets: IAssets["terrain"],
-    terrainIdx: ETerrain,
-    x: number,
-    y: number,
-    capture?: number
-  ) {
-    super(assets, terrainIdx, x, y);
+  constructor(terrainIdx: ETerrain, x: number, y: number, capture?: number) {
+    if (
+      terrainIdx < ETerrain.NEUTRALCITY ||
+      (terrainIdx >= ETerrain.VPIPE && terrainIdx <= ETerrain.WPIPEEND)
+    ) {
+      throw new Error(`Cannot create Building with terrainIdx: ${terrainIdx}`);
+    }
+    super(terrainIdx, x, y);
     this.country = this._getCountry();
     this.capture ?? capture;
   }
