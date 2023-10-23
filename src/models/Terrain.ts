@@ -1,6 +1,6 @@
 import { ELayer } from "../gameMap";
 import { movementArr } from "../movement";
-import { terrainFilenames } from "../files";
+import { terrainFilenames } from "./files";
 import { Sprite } from "./Sprite";
 
 export enum ETerrain {

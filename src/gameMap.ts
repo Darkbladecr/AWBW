@@ -1,5 +1,4 @@
 import { decompressFrames, parseGIF } from "gifuct-js";
-import GifPlayer from "./GifPlayer";
 import { Building, isDynamicTerrain } from "./models/Building";
 import {
   ETerrain,
@@ -15,7 +14,7 @@ import {
   unitMetadata,
 } from "./models/Unit";
 
-import Queue from "./Queue";
+import Queue from "./utils/Queue";
 import {
   Decal,
   EDecal,
@@ -24,7 +23,7 @@ import {
 } from "./models/Decal";
 import { ISpriteMetadata } from "./models/Sprite";
 import { EMapStyle, STYLES, ECountry } from "./models/types";
-import { terrainFilenames, decalFilenames } from "./files";
+import { terrainFilenames, decalFilenames } from "./models/files";
 
 type TerrainSpriteMetadata = ITerrainMetadata & ISpriteMetadata;
 type UnitSpriteMetadata = IUnitMetadata & ISpriteMetadata;
@@ -103,7 +102,6 @@ class GameMap {
   mapMetadata: ITerrainMetadata[][];
   units: Map<string, Unit> = new Map();
 
-  gifs: Map<string, GifPlayer> = new Map();
   requestedAnimationFrame: number | undefined;
   renderQueue = new Queue<SpriteType>();
 

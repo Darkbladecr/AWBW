@@ -1,6 +1,6 @@
 import { ELayer } from "../gameMap";
 import { EMovementType } from "../movement";
-import { unitFilenames } from "../files";
+import { unitFilenames } from "./files";
 import { Sprite } from "./Sprite";
 import { ECountry, countryCodes } from "./types";
 
