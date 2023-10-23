@@ -337,7 +337,7 @@ class GameMap {
       ctx.stroke();
       ctx.closePath();
     }
-    ctx.strokeStyle = "#000";
+    ctx.strokeStyle = "#fafadd";
   }
 
   /**
