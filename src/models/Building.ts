@@ -1,5 +1,6 @@
 import { ECountry, ETerrain } from "../sprites";
 import Terrain from "./Terrain";
+import { isDynamicTerrain } from "./types";
 
 export default class Building extends Terrain {
   country: ECountry;
@@ -7,10 +8,7 @@ export default class Building extends Terrain {
   // TODO: resupply metadata
 
   constructor(terrainIdx: ETerrain, x: number, y: number, capture?: number) {
-    if (
-      terrainIdx < ETerrain.NEUTRALCITY ||
-      (terrainIdx >= ETerrain.VPIPE && terrainIdx <= ETerrain.WPIPEEND)
-    ) {
+    if (!isDynamicTerrain(terrainIdx)) {
       throw new Error(`Cannot create Building with terrainIdx: ${terrainIdx}`);
     }
     super(terrainIdx, x, y);

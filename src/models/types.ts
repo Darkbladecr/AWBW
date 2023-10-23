@@ -41,16 +41,17 @@ type movementArr = [
 ];
 
 export enum EMapStyle {
-  AW1 = "aw1",
-  AW2 = "aw2",
-  ANIMATED = "ani",
+  AW1,
+  AW2,
+  ANIMATED,
 }
+export const STYLES = [EMapStyle.AW1, EMapStyle.AW2, EMapStyle.ANIMATED];
 
-export type SpriteMap = Record<EMapStyle, HTMLImageElement | undefined>;
+export type SpriteArr<T> = [T, T, T];
 
 export interface ISpriteMetadata {
-  sprite: SpriteMap;
-  frames: ParsedFrame[];
+  sprites: SpriteArr<HTMLImageElement>;
+  frames: SpriteArr<ParsedFrame[]>;
 }
 
 export interface ITerrainMetadata {
@@ -58,6 +59,13 @@ export interface ITerrainMetadata {
   spriteIdx: ETerrain;
   defense: number;
   movement: [movementArr, movementArr, movementArr];
+}
+
+export function isDynamicTerrain(index: ETerrain) {
+  return (
+    index >= ETerrain.NEUTRALCITY ||
+    (index < ETerrain.VPIPE && index > ETerrain.WPIPEEND)
+  );
 }
 
 export function getTerrainMetadata(index: ETerrain) {
