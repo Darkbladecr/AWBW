@@ -1,5 +1,5 @@
-import { IAssets } from "../gameMap";
-import { ECountry, getUnitCode, unitNames } from "../sprites";
+import { ELayer } from "../gameMap";
+import { ECountry, getUnitCode, unitFilenames } from "../sprites";
 import Sprite from "./Sprite";
 import { EUnit, IUnitMetadata, unitMetadata } from "./types";
 
@@ -9,6 +9,7 @@ import { EUnit, IUnitMetadata, unitMetadata } from "./types";
 
 export default class Unit extends Sprite {
   spriteIdx: number;
+  layerId = ELayer.UNITS;
   country: ECountry;
   unit: EUnit;
   name: string;
@@ -31,7 +32,7 @@ export default class Unit extends Sprite {
     super();
     this.country = country;
     this.unit = unit;
-    this.name = unitNames[unit - 1];
+    this.name = unitFilenames[unit - 1];
     this.spriteIdx = getUnitCode(country, unit);
     this.x = x;
     this.y = y;

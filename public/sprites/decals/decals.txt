@@ -15,3 +15,6 @@ https://awbw.amarriner.com/terrain/unit_select.gif
 https://awbw.amarriner.com/terrain/ani/aniammo.gif
 https://awbw.amarriner.com/terrain/ani/anifuel.gif
 https://awbw.amarriner.com/terrain/ani/capture.gif
+https://awbw.amarriner.com/terrain/ani/subdive2.gif
+https://awbw.amarriner.com/terrain/ani/fogload.gif
+https://awbw.amarriner.com/terrain/ani/load.gif

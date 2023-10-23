@@ -1,9 +1,11 @@
+import { ELayer } from "../gameMap";
 import { ETerrain } from "../sprites";
 import Sprite from "./Sprite";
 import { ITerrainMetadata, getTerrainMetadata } from "./types";
 
 export default class Terrain extends Sprite {
   spriteIdx: number;
+  layerId = ELayer.STATIC;
   x: number;
   y: number;
 

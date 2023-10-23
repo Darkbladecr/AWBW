@@ -1,6 +1,21 @@
 .layer {
   position: absolute;
-  left: 0;
-  top: 0;
+  left: 100px;
+  top: 100px;
   background-color: transparent;
+}
+
+.movement-tile {
+  background: rgba(67, 217, 228, 0.4);
+  border-color: rgb(22, 98, 184);
+}
+
+.range-square {
+  background: rgba(255, 27, 27, 0.4);
+  border-color: rgb(155, 0, 0);
+}
+
+.vision-square {
+  background: rgba(236, 221, 9, 0.4);
+  border-color: rgb(255, 115, 0);
 }

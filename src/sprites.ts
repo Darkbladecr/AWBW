@@ -1,6 +1,6 @@
-import { EUnit } from "./models/types";
+import { EUnit, ISpriteMetadata } from "./models/types";
 
-export const terrain = [
+export const terrainFilenames = [
   "plain",
   "mountain",
   "wood",
@@ -382,7 +382,7 @@ export enum ECountry {
   WHITE_NOVA,
 }
 
-export const unitNames = [
+export const unitFilenames = [
   "anti-air",
   "apc",
   "artillery",
@@ -411,9 +411,81 @@ export const unitNames = [
 ];
 
 export const countryUnits = countryCodes
-  .map((countryCode) => unitNames.map((unit) => `${countryCode}${unit}`))
+  .map((countryCode) => unitFilenames.map((unit) => `${countryCode}${unit}`))
   .flat();
 
 export function getUnitCode(country: ECountry, unit: EUnit) {
-  return unit + (country - 1) * unitNames.length;
+  return unit + (country - 1) * unitFilenames.length;
+}
+
+export enum EDecal {
+  HP1,
+  HP2,
+  HP3,
+  HP4,
+  HP5,
+  HP6,
+  HP7,
+  HP8,
+  HP9,
+  AMMO,
+  FUEL,
+  CAPTURE,
+  LOAD,
+  FOG_LOAD,
+  SUB_DIVE,
+  SUPPLY_RIGHT,
+  TARGET,
+  TRAP_RIGHT,
+  SELECT,
+}
+
+export const decalFilenames = [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "aniammo",
+  "anifuel",
+  "capture",
+  "load",
+  "fogload",
+  "subdive2",
+  "supply_right",
+  "target_icon2",
+  "trap_right",
+  "unit_select",
+];
+
+export function getDecalMetadata(index: EDecal) {
+  const metadata: Partial<ISpriteMetadata> = {
+    offsetX: 0,
+    offsetY: 0,
+  };
+  if (index <= EDecal.HP9) {
+    metadata.offsetX = 11;
+    metadata.offsetY = 11;
+  } else if (index === EDecal.AMMO) {
+    metadata.offsetX = 12;
+    metadata.offsetY = 12;
+  } else if (index === EDecal.FUEL) {
+    metadata.offsetX = 11;
+    metadata.offsetY = 10;
+  } else if (index >= EDecal.CAPTURE && index <= EDecal.SUB_DIVE) {
+    metadata.offsetX = 2;
+    metadata.offsetY = 10;
+  } else if (index === EDecal.SUPPLY_RIGHT || index === EDecal.TRAP_RIGHT) {
+    metadata.offsetX = 20;
+    metadata.offsetY = 5;
+  } else if (index === EDecal.SELECT) {
+    metadata.offsetX = -1.5;
+    metadata.offsetY = -1.5;
+  }
+
+  return metadata;
 }

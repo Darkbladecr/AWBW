@@ -1,6 +1,6 @@
 import GameMap from "./gameMap";
-import { EMapStyle, EUnit } from "./models/types";
-import { ECountry, ETerrain } from "./sprites";
+import { EUnit } from "./models/types";
+import { ECountry, EDecal, ETerrain } from "./sprites";
 import "./style.css";
 
 const sampleMap = [
@@ -50,9 +50,11 @@ async function main() {
   gameMap.insertTerrain(ETerrain.ORANGESTARCOMTOWER, 0, 0);
   gameMap.insertTerrain(ETerrain.PLAIN, 1, 0);
   gameMap.insertUnit(ECountry.ORANGE_STAR, EUnit.INFANTRY, 0, 2);
+  // gameMap.insertDecal(EDecal.CAPTURE, 0, 2);
   gameMap.render({ grid: true });
-  setTimeout(() => gameMap.setStyle(EMapStyle.AW1), 1000);
-  setTimeout(() => gameMap.setStyle(EMapStyle.ANIMATED), 5000);
+  // console.log(gameMap.layers[ELayer.UNITS]);
+  // setTimeout(() => gameMap.setStyle(EMapStyle.AW1), 1000);
+  // setTimeout(() => gameMap.setStyle(EMapStyle.ANIMATED), 5000);
 }
 
 main();

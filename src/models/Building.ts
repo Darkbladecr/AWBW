@@ -1,3 +1,4 @@
+import { ELayer } from "../gameMap";
 import { ECountry, ETerrain } from "../sprites";
 import Terrain from "./Terrain";
 import { isDynamicTerrain } from "./types";
@@ -5,6 +6,7 @@ import { isDynamicTerrain } from "./types";
 export default class Building extends Terrain {
   country: ECountry;
   capture = 20;
+  layerId = ELayer.DYNAMIC;
   // TODO: resupply metadata
 
   constructor(terrainIdx: ETerrain, x: number, y: number, capture?: number) {

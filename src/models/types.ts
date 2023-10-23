@@ -1,5 +1,5 @@
 import { ParsedFrame } from "gifuct-js";
-import { ETerrain, terrain } from "../sprites";
+import { ETerrain, terrainFilenames } from "../sprites";
 
 export enum EWeather {
   CLEAR,
@@ -50,6 +50,8 @@ export const STYLES = [EMapStyle.AW1, EMapStyle.AW2, EMapStyle.ANIMATED];
 export type SpriteArr<T> = [T, T, T];
 
 export interface ISpriteMetadata {
+  offsetX: number;
+  offsetY: number;
   sprites: SpriteArr<HTMLImageElement>;
   frames: SpriteArr<ParsedFrame[]>;
 }
@@ -79,7 +81,7 @@ export function getTerrainMetadata(index: ETerrain) {
   }
   let metadata: ITerrainMetadata = {
     spriteIdx: index,
-    name: terrain[terrainIdx],
+    name: terrainFilenames[terrainIdx],
     defense: 0,
     movement: [nullMovement, nullMovement, nullMovement],
   };
@@ -243,7 +245,7 @@ export function getTerrainMetadata(index: ETerrain) {
 }
 
 export enum EUnit {
-  ANTIAIR = 1,
+  ANTIAIR,
   APC,
   ARTILLERY,
   BCOPTER,
@@ -676,3 +678,7 @@ export const unitMetadata: IUnitMetadata[] = [
     cost: 7000,
   },
 ];
+
+export interface IDecalMetadata {
+  name: string;
+}
