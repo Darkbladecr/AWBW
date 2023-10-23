@@ -1,9 +1,15 @@
 import { ELayer } from "../gameMap";
-import { ECountry, ETerrain } from "../sprites";
-import Terrain from "./Terrain";
-import { isDynamicTerrain } from "./types";
+import { ETerrain, Terrain } from "./Terrain";
+import { ECountry } from "./types";
 
-export default class Building extends Terrain {
+export function isDynamicTerrain(index: ETerrain) {
+  return (
+    index >= ETerrain.NEUTRALCITY ||
+    (index < ETerrain.VPIPE && index > ETerrain.WPIPEEND)
+  );
+}
+
+export class Building extends Terrain {
   country: ECountry;
   capture = 20;
   layerId = ELayer.DYNAMIC;

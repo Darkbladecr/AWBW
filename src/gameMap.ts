@@ -1,31 +1,30 @@
 import { decompressFrames, parseGIF } from "gifuct-js";
 import GifPlayer from "./GifPlayer";
-import Building from "./models/Building";
-import Terrain from "./models/Terrain";
-import Unit from "./models/Unit";
+import { Building, isDynamicTerrain } from "./models/Building";
 import {
-  EMapStyle,
-  EUnit,
-  IDecalMetadata,
-  ISpriteMetadata,
-  ITerrainMetadata,
-  IUnitMetadata,
-  STYLES,
-  getTerrainMetadata,
-  isDynamicTerrain,
-  unitMetadata,
-} from "./models/types";
-import {
-  terrainFilenames,
   ETerrain,
+  ITerrainMetadata,
+  Terrain,
+  getTerrainMetadata,
+} from "./models/Terrain";
+import {
+  EUnit,
+  IUnitMetadata,
+  Unit,
   countryUnits,
-  ECountry,
-  decalFilenames,
-  EDecal,
-  getDecalMetadata,
-} from "./sprites";
+  unitMetadata,
+} from "./models/Unit";
+
 import Queue from "./Queue";
-import Decal from "./models/Decal";
+import {
+  Decal,
+  EDecal,
+  IDecalMetadata,
+  getDecalMetadata,
+} from "./models/Decal";
+import { ISpriteMetadata } from "./models/Sprite";
+import { EMapStyle, STYLES, ECountry } from "./models/types";
+import { terrainFilenames, decalFilenames } from "./files";
 
 type TerrainSpriteMetadata = ITerrainMetadata & ISpriteMetadata;
 type UnitSpriteMetadata = IUnitMetadata & ISpriteMetadata;

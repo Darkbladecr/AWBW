@@ -1,6 +1,7 @@
 import GameMap from "./gameMap";
-import { EUnit } from "./models/types";
-import { ECountry, EDecal, ETerrain } from "./sprites";
+import { ETerrain } from "./models/Terrain";
+import { ECountry } from "./models/types";
+import { EUnit } from "./models/Unit";
 import "./style.css";
 
 const sampleMap = [
