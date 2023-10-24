@@ -12,7 +12,10 @@ export enum ELayer {
   DYNAMIC,
   HELPERS,
   UNITS,
-  DECALS,
+  HP,
+  FUEL,
+  AMMO,
+  CAPTURE,
   CURSOR,
   UI,
 }
@@ -21,7 +24,10 @@ export const LAYERS = [
   "dynamic",
   "helpers",
   "units",
-  "decals",
+  "hp",
+  "fuel",
+  "ammo",
+  "capture",
   "cursor",
   "ui",
 ];
@@ -38,16 +44,23 @@ interface IMapLayer<T extends SpriteType> {
 type GameMapLayers = [
   IMapLayer<Terrain>,
   IMapLayer<Building>,
-  IMapLayer<any>,
+  IMapLayer<any>, // helpers
   IMapLayer<Unit>,
-  IMapLayer<Decal>,
-  IMapLayer<Decal>,
-  IMapLayer<any>
+  IMapLayer<Decal>, // hp
+  IMapLayer<Decal>, // fuel
+  IMapLayer<Decal>, // ammo
+  IMapLayer<Decal>, // capture
+  IMapLayer<Decal>, // cursor
+  IMapLayer<any> // UI
 ];
 
 interface IRenderArgs {
   layers?: ELayer[];
   grid?: boolean;
+}
+
+interface IInsertTerrain extends IBuildingArgs {
+  rerender?: boolean;
 }
 
 // type MapLayers = [ETerrain, Building | null, Unit | null];
@@ -162,7 +175,10 @@ class RenderEngine {
       layers[ELayer.DYNAMIC],
       layers[ELayer.HELPERS],
       layers[ELayer.UNITS],
-      layers[ELayer.DECALS],
+      layers[ELayer.HP],
+      layers[ELayer.FUEL],
+      layers[ELayer.AMMO],
+      layers[ELayer.CAPTURE],
       layers[ELayer.CURSOR],
       layers[ELayer.UI],
     ];
@@ -206,7 +222,7 @@ class RenderEngine {
   /**
    * Insert terrain either onto the static or dynamic layer based on the asset type
    */
-  insertTerrain({ index, x, y, capture }: IBuildingArgs) {
+  insertTerrain({ index, x, y, capture, rerender }: IInsertTerrain) {
     let item: Terrain | Building;
     if (!isDynamicTerrain(index)) {
       item = new Terrain({ index, x, y });
@@ -215,7 +231,9 @@ class RenderEngine {
       item = new Building({ index, x, y, capture });
       this.layers[ELayer.DYNAMIC].sprites[y][x] = item as Building;
     }
-    this._resetAnimate();
+    if (!rerender) {
+      this._resetAnimate();
+    }
     // this.mapMetadata[y][x] = getTerrainMetadata(index);
     return item;
   }
@@ -256,9 +274,6 @@ class RenderEngine {
 
   private _insertCursor(x: number, y: number) {
     const cursor = new Decal({ index: EDecal.SELECT, x, y });
-    if (cursor) {
-      cursor.layerId = ELayer.CURSOR;
-    }
     return cursor;
   }
 
@@ -371,11 +386,10 @@ class RenderEngine {
     }
     const frames = asset.frames[this.style];
     if (frames.length === 0) {
-      // console.log(asset.sprites[this.style]);
       this.layers[item.layerId].ctx.drawImage(
         asset.sprites[this.style],
-        item.x * this.grid + asset.offsetX * 2,
-        item.y * this.grid + asset.offsetY * 2
+        item.x * this.grid + asset.offsetX,
+        item.y * this.grid + asset.offsetY
       );
     }
     const frame = frames[item.frameIndex];
@@ -410,11 +424,11 @@ class RenderEngine {
       item.frameIndex = 0;
     }
     const nextFrame = frames[item.frameIndex];
-    const posX = item.x * this.grid + this.padding;
+    const posX = item.x * this.grid + this.padding + asset.offsetX;
 
     if (frame.disposalType === 2) {
       const offset = frame.dims.height - this.grid;
-      const posY = item.y * this.grid - offset + this.padding;
+      const posY = item.y * this.grid - offset + this.padding + asset.offsetY;
       this.layers[item.layerId].ctx.clearRect(
         posX,
         posY,
@@ -430,7 +444,7 @@ class RenderEngine {
     frameImageData.data.set(nextFrame.patch);
 
     const offset = nextFrame.dims.height - this.grid;
-    const posY = item.y * this.grid - offset + this.padding;
+    const posY = item.y * this.grid - offset + this.padding + asset.offsetY;
     this.layers[item.layerId].ctx.putImageData(frameImageData, posX, posY);
   }
 

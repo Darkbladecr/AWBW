@@ -23,7 +23,7 @@ export enum EDecal {
   SELECT,
 }
 
-export interface IDecalMetadata {
+export interface IDecalMetadata extends ISpriteMetadata {
   name: string;
 }
 
@@ -33,20 +33,23 @@ export function getDecalMetadata(index: EDecal) {
     offsetY: 0,
   };
   if (index <= EDecal.HP9) {
-    metadata.offsetX = 11;
-    metadata.offsetY = 11;
+    metadata.offsetX = 7;
+    metadata.offsetY = -1;
   } else if (index === EDecal.AMMO) {
-    metadata.offsetX = 12;
-    metadata.offsetY = 12;
+    metadata.offsetX = 8;
+    metadata.offsetY = -5;
   } else if (index === EDecal.FUEL) {
-    metadata.offsetX = 11;
-    metadata.offsetY = 10;
+    metadata.offsetX = 8;
+    metadata.offsetY = -1;
   } else if (index >= EDecal.CAPTURE && index <= EDecal.SUB_DIVE) {
-    metadata.offsetX = 2;
-    metadata.offsetY = 10;
+    metadata.offsetX = -1;
+    metadata.offsetY = 0;
   } else if (index === EDecal.SUPPLY_RIGHT || index === EDecal.TRAP_RIGHT) {
-    metadata.offsetX = 20;
-    metadata.offsetY = 5;
+    metadata.offsetX = 16;
+    metadata.offsetY = -1;
+  } else if (index === EDecal.TARGET) {
+    metadata.offsetX = -2;
+    metadata.offsetY = -2;
   } else if (index === EDecal.SELECT) {
     metadata.offsetX = -5;
     metadata.offsetY = -5;
@@ -63,7 +66,7 @@ export interface IDecalArgs {
 
 export class Decal extends Sprite {
   spriteIdx: number;
-  layerId = ELayer.DECALS;
+  layerId: ELayer;
   x: number;
   y: number;
 
@@ -72,5 +75,19 @@ export class Decal extends Sprite {
     this.spriteIdx = index;
     this.x = x;
     this.y = y;
+
+    if (index <= EDecal.HP9) {
+      this.layerId = ELayer.HP;
+    } else if (index === EDecal.AMMO) {
+      this.layerId = ELayer.AMMO;
+    } else if (index === EDecal.FUEL) {
+      this.layerId = ELayer.FUEL;
+    } else if (index >= EDecal.CAPTURE && index <= EDecal.SUB_DIVE) {
+      this.layerId = ELayer.CAPTURE;
+    } else if (index === EDecal.SELECT || index === EDecal.TARGET) {
+      this.layerId = ELayer.CURSOR;
+    } else {
+      this.layerId = ELayer.UI;
+    }
   }
 }

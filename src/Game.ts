@@ -56,7 +56,7 @@ class Game {
 
     for (const { x, y } of this.engine.gridIterator({ layers: 1 })) {
       const index = map[y][x];
-      this.engine.insertTerrain({ index, x, y });
+      this.engine.insertTerrain({ index, x, y, rerender: false });
     }
     this.engine.render();
   }
