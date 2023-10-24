@@ -1,5 +1,5 @@
+import { IMovementArr, NULL_MOVEMENT } from "../movement/Movement";
 import { ELayer } from "../RenderEngine";
-import { movementArr } from "../movement";
 import { terrainFilenames } from "./files";
 import { Sprite } from "./Sprite";
 
@@ -179,11 +179,10 @@ export interface ITerrainMetadata {
   name: string;
   spriteIdx: ETerrain;
   defense: number;
-  movement: [movementArr, movementArr, movementArr];
+  movement: [IMovementArr, IMovementArr, IMovementArr];
 }
 
-export function getTerrainMetadata(index: ETerrain) {
-  const nullMovement: movementArr = [0, 0, 0, 0, 0, 0, 0, 0];
+export function getTerrainMetadata(index: ETerrain): ITerrainMetadata {
   let terrainIdx = index;
   if (index > 81) {
     terrainIdx = terrainIdx - (81 - 57);
@@ -195,7 +194,7 @@ export function getTerrainMetadata(index: ETerrain) {
     spriteIdx: index,
     name: terrainFilenames[terrainIdx],
     defense: 0,
-    movement: [nullMovement, nullMovement, nullMovement],
+    movement: [NULL_MOVEMENT, NULL_MOVEMENT, NULL_MOVEMENT],
   };
   if (
     index === ETerrain.PLAIN ||
@@ -203,47 +202,47 @@ export function getTerrainMetadata(index: ETerrain) {
     index === ETerrain.VPIPERUBBLE
   ) {
     metadata.defense = 1;
-    const clearMovement: movementArr = [1, 1, 1, 2, 1, 0, 0, 0];
-    const rainMovement: movementArr = [1, 1, 2, 3, 1, 0, 0, 0];
-    const snowMovement: movementArr = [2, 1, 2, 3, 2, 0, 0, 0];
+    const clearMovement: IMovementArr = [1, 1, 1, 2, 1, 0, 0, 0];
+    const rainMovement: IMovementArr = [1, 1, 2, 3, 1, 0, 0, 0];
+    const snowMovement: IMovementArr = [2, 1, 2, 3, 2, 0, 0, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (index === ETerrain.MOUNTAIN) {
     metadata.defense = 4;
-    const clearMovement: movementArr = [2, 1, 0, 0, 1, 0, 0, 0];
-    const rainMovement: movementArr = [2, 1, 0, 0, 1, 0, 0, 0];
-    const snowMovement: movementArr = [4, 2, 0, 0, 2, 0, 0, 0];
+    const clearMovement: IMovementArr = [2, 1, 0, 0, 1, 0, 0, 0];
+    const rainMovement: IMovementArr = [2, 1, 0, 0, 1, 0, 0, 0];
+    const snowMovement: IMovementArr = [4, 2, 0, 0, 2, 0, 0, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (index === ETerrain.WOOD) {
     metadata.defense = 2;
-    const clearMovement: movementArr = [1, 1, 2, 3, 1, 0, 0, 0];
-    const rainMovement: movementArr = [1, 1, 3, 4, 1, 0, 0, 0];
-    const snowMovement: movementArr = [2, 1, 2, 3, 2, 0, 0, 0];
+    const clearMovement: IMovementArr = [1, 1, 2, 3, 1, 0, 0, 0];
+    const rainMovement: IMovementArr = [1, 1, 3, 4, 1, 0, 0, 0];
+    const snowMovement: IMovementArr = [2, 1, 2, 3, 2, 0, 0, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (index >= ETerrain.HRIVER && index <= ETerrain.NESRIVER) {
-    const clearMovement: movementArr = [2, 1, 0, 0, 1, 0, 0, 0];
-    const rainMovement: movementArr = [2, 1, 0, 0, 1, 0, 0, 0];
-    const snowMovement: movementArr = [2, 1, 0, 0, 2, 0, 0, 0];
+    const clearMovement: IMovementArr = [2, 1, 0, 0, 1, 0, 0, 0];
+    const rainMovement: IMovementArr = [2, 1, 0, 0, 1, 0, 0, 0];
+    const snowMovement: IMovementArr = [2, 1, 0, 0, 2, 0, 0, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (index >= ETerrain.HROAD && index <= ETerrain.VBRIDGE) {
-    const clearMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const rainMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const snowMovement: movementArr = [1, 1, 1, 1, 2, 0, 0, 0];
+    const clearMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const rainMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const snowMovement: IMovementArr = [1, 1, 1, 1, 2, 0, 0, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (index === ETerrain.SEA) {
-    const clearMovement: movementArr = [0, 0, 0, 0, 1, 1, 1, 0];
-    const rainMovement: movementArr = [0, 0, 0, 0, 1, 1, 1, 0];
-    const snowMovement: movementArr = [0, 0, 0, 0, 2, 2, 2, 0];
+    const clearMovement: IMovementArr = [0, 0, 0, 0, 1, 1, 1, 0];
+    const rainMovement: IMovementArr = [0, 0, 0, 0, 1, 1, 1, 0];
+    const snowMovement: IMovementArr = [0, 0, 0, 0, 2, 2, 2, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (index >= ETerrain.HSHOAL && index <= ETerrain.VSHOALE) {
-    const clearMovement: movementArr = [1, 1, 1, 1, 1, 0, 1, 0];
-    const rainMovement: movementArr = [1, 1, 1, 1, 1, 0, 1, 0];
-    const snowMovement: movementArr = [1, 1, 1, 1, 2, 0, 1, 0];
+    const clearMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 1, 0];
+    const rainMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 1, 0];
+    const snowMovement: IMovementArr = [1, 1, 1, 1, 2, 0, 1, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (index === ETerrain.REEF) {
     metadata.defense = 1;
-    const clearMovement: movementArr = [0, 0, 0, 0, 1, 2, 2, 0];
-    const rainMovement: movementArr = [0, 0, 0, 0, 1, 2, 2, 0];
-    const snowMovement: movementArr = [0, 0, 0, 0, 2, 2, 2, 0];
+    const clearMovement: IMovementArr = [0, 0, 0, 0, 1, 2, 2, 0];
+    const rainMovement: IMovementArr = [0, 0, 0, 0, 1, 2, 2, 0];
+    const snowMovement: IMovementArr = [0, 0, 0, 0, 2, 2, 2, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (
     index === ETerrain.NEUTRALCITY ||
@@ -255,9 +254,9 @@ export function getTerrainMetadata(index: ETerrain) {
       (index - ETerrain.COBALTICECITY) % 7 === 0)
   ) {
     metadata.defense = 3;
-    const clearMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const rainMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const snowMovement: movementArr = [1, 1, 1, 1, 2, 0, 0, 0];
+    const clearMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const rainMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const snowMovement: IMovementArr = [1, 1, 1, 1, 2, 0, 0, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (
     index === ETerrain.NEUTRALBASE ||
@@ -269,9 +268,9 @@ export function getTerrainMetadata(index: ETerrain) {
       (index - ETerrain.COBALTICEBASE) % 7 === 0)
   ) {
     metadata.defense = 3;
-    const clearMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 1];
-    const rainMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 1];
-    const snowMovement: movementArr = [1, 1, 1, 1, 2, 0, 0, 1];
+    const clearMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 1];
+    const rainMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 1];
+    const snowMovement: IMovementArr = [1, 1, 1, 1, 2, 0, 0, 1];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (
     index === ETerrain.NEUTRALAIRPORT ||
@@ -284,9 +283,9 @@ export function getTerrainMetadata(index: ETerrain) {
       (index - ETerrain.COBALTICEAIRPORT) % 7 === 0)
   ) {
     metadata.defense = 3;
-    const clearMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const rainMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const snowMovement: movementArr = [1, 1, 1, 1, 2, 0, 0, 0];
+    const clearMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const rainMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const snowMovement: IMovementArr = [1, 1, 1, 1, 2, 0, 0, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (
     index === ETerrain.NEUTRALPORT ||
@@ -298,9 +297,9 @@ export function getTerrainMetadata(index: ETerrain) {
       (index - ETerrain.COBALTICEPORT) % 7 === 0)
   ) {
     metadata.defense = 3;
-    const clearMovement: movementArr = [1, 1, 1, 1, 1, 1, 1, 0];
-    const rainMovement: movementArr = [1, 1, 1, 1, 1, 1, 1, 0];
-    const snowMovement: movementArr = [1, 1, 1, 1, 2, 2, 2, 0];
+    const clearMovement: IMovementArr = [1, 1, 1, 1, 1, 1, 1, 0];
+    const rainMovement: IMovementArr = [1, 1, 1, 1, 1, 1, 1, 0];
+    const snowMovement: IMovementArr = [1, 1, 1, 1, 2, 2, 2, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (
     (index < ETerrain.VPIPE && (index - ETerrain.ORANGESTARHQ) % 5 === 0) ||
@@ -311,27 +310,27 @@ export function getTerrainMetadata(index: ETerrain) {
       (index - ETerrain.COBALTICEHQ) % 7 === 0)
   ) {
     metadata.defense = 4;
-    const clearMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const rainMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const snowMovement: movementArr = [1, 1, 1, 1, 2, 0, 0, 0];
+    const clearMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const rainMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const snowMovement: IMovementArr = [1, 1, 1, 1, 2, 0, 0, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (
     (index >= ETerrain.VPIPE && index <= ETerrain.WPIPEEND) ||
     index === ETerrain.HPIPESEAM ||
     index === ETerrain.VPIPESEAM
   ) {
-    const clearMovement: movementArr = [0, 0, 0, 0, 0, 0, 0, 1];
-    const rainMovement: movementArr = [0, 0, 0, 0, 0, 0, 0, 1];
-    const snowMovement: movementArr = [0, 0, 0, 0, 0, 0, 0, 1];
+    const clearMovement: IMovementArr = [0, 0, 0, 0, 0, 0, 0, 1];
+    const rainMovement: IMovementArr = [0, 0, 0, 0, 0, 0, 0, 1];
+    const snowMovement: IMovementArr = [0, 0, 0, 0, 0, 0, 0, 1];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (
     index === ETerrain.MISSILESILO ||
     index === ETerrain.MISSILESILOEMPTY
   ) {
     metadata.defense = 3;
-    const clearMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const rainMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const snowMovement: movementArr = [1, 1, 1, 1, 2, 0, 0, 0];
+    const clearMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const rainMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const snowMovement: IMovementArr = [1, 1, 1, 1, 2, 0, 0, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (
     (index >= ETerrain.AMBERBLAZECOMTOWER &&
@@ -339,18 +338,18 @@ export function getTerrainMetadata(index: ETerrain) {
     (index - ETerrain.COBALTICECOMTOWER) % 7 === 0
   ) {
     metadata.defense = 3;
-    const clearMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const rainMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const snowMovement: movementArr = [1, 1, 1, 1, 2, 0, 0, 0];
+    const clearMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const rainMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const snowMovement: IMovementArr = [1, 1, 1, 1, 2, 0, 0, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   } else if (
     (index >= ETerrain.AMBERBLAZELAB && index <= ETerrain.YELLOWCOMETLAB) ||
     (index - ETerrain.COBALTICELAB) % 7 === 0
   ) {
     metadata.defense = 3;
-    const clearMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const rainMovement: movementArr = [1, 1, 1, 1, 1, 0, 0, 0];
-    const snowMovement: movementArr = [1, 1, 1, 1, 2, 0, 0, 0];
+    const clearMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const rainMovement: IMovementArr = [1, 1, 1, 1, 1, 0, 0, 0];
+    const snowMovement: IMovementArr = [1, 1, 1, 1, 2, 0, 0, 0];
     metadata.movement = [clearMovement, rainMovement, snowMovement];
   }
   return metadata;

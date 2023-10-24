@@ -59,6 +59,7 @@ class Game {
       this.engine.insertTerrain({ index, x, y, rerender: false });
     }
     this.engine.render();
+    console.log(this.engine.movement);
   }
 
   private _debounce(func: Function, wait: number, immediate?: boolean) {

@@ -1,5 +1,5 @@
 import { ELayer } from "../RenderEngine";
-import { EMovementType } from "../movement";
+import { EMovementType } from "../movement/Movement";
 import { unitFilenames } from "./files";
 import { Sprite } from "./Sprite";
 import { ECountry, countryCodes } from "./types";

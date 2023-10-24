@@ -1,11 +1,16 @@
 import { Building, IBuildingArgs, isDynamicTerrain } from "./models/Building";
-import { Terrain } from "./models/Terrain";
+import {
+  ITerrainMetadata,
+  Terrain,
+  getTerrainMetadata,
+} from "./models/Terrain";
 import { IUnitArgs, Unit } from "./models/Unit";
 
 import Queue from "./utils/Queue";
 import { Decal, EDecal, IDecalArgs } from "./models/Decal";
 import { EMapStyle } from "./models/types";
 import Assets, { SpriteMetadata } from "./Assets";
+import { Movement } from "./movement/Movement";
 
 export enum ELayer {
   STATIC,
@@ -34,14 +39,14 @@ export const LAYERS = [
 
 type SpriteType = Terrain | Building | Unit | Decal;
 
-interface IMapLayer<T extends SpriteType> {
+export interface IMapLayer<T extends SpriteType> {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   imageData: ImageData | undefined;
   sprites: (T | null)[][];
 }
 
-type GameMapLayers = [
+export type GameMapLayers = [
   IMapLayer<Terrain>,
   IMapLayer<Building>,
   IMapLayer<any>, // helpers
@@ -63,8 +68,6 @@ interface IInsertTerrain extends IBuildingArgs {
   rerender?: boolean;
 }
 
-// type MapLayers = [ETerrain, Building | null, Unit | null];
-
 class RenderEngine {
   grid = 16;
   padding = 4;
@@ -73,16 +76,12 @@ class RenderEngine {
   height: number;
   widthPx: number;
   heightPx: number;
-  // map: MapLayers[][];
 
   // keep canvases in separate layers for efficient updates
   debug = true;
 
   rootElement!: HTMLElement;
   layers!: GameMapLayers;
-  buildings: Map<string, Building> = new Map();
-  // mapMetadata: ITerrainMetadata[][];
-  units: Map<string, Unit> = new Map();
 
   requestedAnimationFrame: number | undefined;
   renderQueue = new Queue<SpriteType>();
@@ -99,8 +98,9 @@ class RenderEngine {
   };
 
   assets!: Assets;
+  movement!: Movement;
 
-  private style: EMapStyle = EMapStyle.ANIMATED;
+  private _style: EMapStyle = EMapStyle.ANIMATED;
   lastRender = 0;
 
   constructor(root: HTMLElement, width: number, height: number) {
@@ -112,9 +112,6 @@ class RenderEngine {
 
     // this.map = Array.from({ length: this.height }, () =>
     //   Array.from({ length: this.width }, () => [0, null, null])
-    // );
-    // this.mapMetadata = Array.from({ length: height }, () =>
-    //   Array(width).fill(null)
     // );
 
     this.setupCanvas();
@@ -144,6 +141,7 @@ class RenderEngine {
       this.height = height;
       this.heightPx = height * this.grid + this.padding * 2;
     }
+
     this.rootElement.innerHTML = "";
     let layers: IMapLayer<any>[] = [];
     for (let i = 0; i < LAYERS.length; i++) {
@@ -194,6 +192,11 @@ class RenderEngine {
   render(args?: IRenderArgs) {
     // const layersToRender = args?.layers ?? [];
     const grid = args?.grid ?? false;
+    this.movement = new Movement({
+      terrain: this.layers[ELayer.STATIC],
+      buildings: this.layers[ELayer.DYNAMIC],
+      units: this.layers[ELayer.UNITS],
+    });
 
     for (const { x, y, layerId } of this.gridIterator()) {
       const item: SpriteType = this.layers[layerId].sprites[y][x];
@@ -231,10 +234,9 @@ class RenderEngine {
       item = new Building({ index, x, y, capture });
       this.layers[ELayer.DYNAMIC].sprites[y][x] = item as Building;
     }
-    if (!rerender) {
+    if (rerender) {
       this._resetAnimate();
     }
-    // this.mapMetadata[y][x] = getTerrainMetadata(index);
     return item;
   }
 
@@ -277,10 +279,13 @@ class RenderEngine {
     return cursor;
   }
 
+  get style() {
+    return this._style;
+  }
   /**
    * Change the style of the GameMap and reset layer assets/animations
    */
-  setStyle(style: EMapStyle) {
+  set style(style: EMapStyle) {
     this.style = style;
     if (this.requestedAnimationFrame) {
       window.cancelAnimationFrame(this.requestedAnimationFrame);
