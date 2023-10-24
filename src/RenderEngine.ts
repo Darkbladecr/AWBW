@@ -374,8 +374,8 @@ class RenderEngine {
       // console.log(asset.sprites[this.style]);
       this.layers[item.layerId].ctx.drawImage(
         asset.sprites[this.style],
-        item.x * this.grid + asset.offsetX,
-        item.y * this.grid + asset.offsetY
+        item.x * this.grid + asset.offsetX * 2,
+        item.y * this.grid + asset.offsetY * 2
       );
     }
     const frame = frames[item.frameIndex];
@@ -445,8 +445,8 @@ class RenderEngine {
     if (asset) {
       this.layers[item.layerId].ctx.drawImage(
         asset.sprites[this.style],
-        x * this.grid + asset.offsetX,
-        y * this.grid + asset.offsetY
+        x * this.grid + this.padding + asset.offsetX,
+        y * this.grid + this.padding + asset.offsetY
       );
     }
   }

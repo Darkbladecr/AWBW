@@ -2,7 +2,6 @@ import Game from "./Game";
 import { ETerrain } from "./models/Terrain";
 import { ECountry } from "./models/types";
 import { EUnit } from "./models/Unit";
-import "./style.css";
 
 const sampleMap = [
   [36, 22, 123, 28, 18, 34, 15, 15, 34, 15, 19, 1, 34, 22, 15, 34, 112],

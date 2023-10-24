@@ -2,8 +2,6 @@ import RenderEngine from "./RenderEngine";
 
 class Game {
   id: string;
-  grid = 16;
-  padding = 4;
   // grid width & height
   width: number;
   height: number;

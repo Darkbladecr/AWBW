@@ -48,8 +48,8 @@ export function getDecalMetadata(index: EDecal) {
     metadata.offsetX = 20;
     metadata.offsetY = 5;
   } else if (index === EDecal.SELECT) {
-    metadata.offsetX = -1.5;
-    metadata.offsetY = -1.5;
+    metadata.offsetX = -5;
+    metadata.offsetY = -5;
   }
 
   return metadata;

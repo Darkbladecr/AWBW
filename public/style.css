@@ -1,8 +1,13 @@
 .layer {
   position: absolute;
-  left: 100px;
-  top: 100px;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
   background-color: transparent;
+}
+
+.hidden {
+  display: none;
 }
 
 .movement-tile {
