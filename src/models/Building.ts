@@ -1,5 +1,5 @@
-import { ELayer } from "../gameMap";
-import { ETerrain, Terrain } from "./Terrain";
+import { ELayer } from "../RenderEngine";
+import { ETerrain, ITerrainArgs, Terrain } from "./Terrain";
 import { ECountry } from "./types";
 
 export function isDynamicTerrain(index: ETerrain) {
@@ -9,17 +9,21 @@ export function isDynamicTerrain(index: ETerrain) {
   );
 }
 
+export interface IBuildingArgs extends ITerrainArgs {
+  capture?: number;
+}
+
 export class Building extends Terrain {
   country: ECountry;
   capture = 20;
   layerId = ELayer.DYNAMIC;
   // TODO: resupply metadata
 
-  constructor(terrainIdx: ETerrain, x: number, y: number, capture?: number) {
-    if (!isDynamicTerrain(terrainIdx)) {
-      throw new Error(`Cannot create Building with terrainIdx: ${terrainIdx}`);
+  constructor({ index, x, y, capture }: IBuildingArgs) {
+    if (!isDynamicTerrain(index)) {
+      throw new Error(`Cannot create Building with terrainIdx: ${index}`);
     }
-    super(terrainIdx, x, y);
+    super({ index, x, y });
     this.country = this._getCountry();
     this.capture ?? capture;
   }

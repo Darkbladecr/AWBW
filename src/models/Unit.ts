@@ -1,8 +1,9 @@
-import { ELayer } from "../gameMap";
+import { ELayer } from "../RenderEngine";
 import { EMovementType } from "../movement";
 import { unitFilenames } from "./files";
 import { Sprite } from "./Sprite";
 import { ECountry, countryCodes } from "./types";
+import { EDecal, IDecalArgs } from "./Decal";
 
 export enum EUnit {
   ANTIAIR,
@@ -447,6 +448,17 @@ export function getUnitCode(country: ECountry, unit: EUnit) {
   return unit + (country - 1) * unitFilenames.length;
 }
 
+export interface IUnitArgs {
+  insertDecal: (args: IDecalArgs) => void;
+  countryIdx: ECountry;
+  unitIdx: EUnit;
+  x: number;
+  y: number;
+  hp?: number;
+  ammo?: number;
+  fuel?: number;
+}
+
 // const landEUnits = [1, 2, 3, 11, 13, 14, 15, 16, 17, 18, 19, 20, 24];
 // const airEUnits = [4, 6, 7, 10, 21, 23];
 // const seaEUnits = [5, 8, 9, 12, 22];
@@ -457,27 +469,30 @@ export class Unit extends Sprite {
   country: ECountry;
   unit: EUnit;
   name: string;
-  hp: number;
-  ammo: number;
-  fuel: number;
+  _hp!: number;
+  _ammo!: number;
+  _fuel!: number;
   turnFuel = 0;
   x: number;
   y: number;
+  insertDecal: (args: IDecalArgs) => void;
 
-  constructor(
-    country: ECountry,
-    unit: EUnit,
-    x: number,
-    y: number,
-    hp?: number,
-    ammo?: number,
-    fuel?: number
-  ) {
+  constructor({
+    insertDecal,
+    countryIdx,
+    unitIdx,
+    x,
+    y,
+    hp,
+    ammo,
+    fuel,
+  }: IUnitArgs) {
     super();
-    this.country = country;
-    this.unit = unit;
-    this.name = unitFilenames[unit - 1];
-    this.spriteIdx = getUnitCode(country, unit);
+    this.insertDecal = insertDecal;
+    this.country = countryIdx;
+    this.unit = unitIdx;
+    this.name = unitFilenames[unitIdx - 1];
+    this.spriteIdx = getUnitCode(countryIdx, unitIdx);
     this.x = x;
     this.y = y;
     this.hp = hp ?? 10;
@@ -485,6 +500,33 @@ export class Unit extends Sprite {
     this.fuel = fuel ?? 99;
   }
 
+  get hp() {
+    return this._hp;
+  }
+  set hp(hp: number) {
+    this._hp = Math.min(0, hp);
+    if (hp < 10) {
+      this.insertDecal({ index: hp - 1, x: this.x, y: this.y });
+    }
+  }
+  get ammo() {
+    return this._ammo;
+  }
+  set ammo(ammo: number) {
+    this._ammo = Math.min(0, ammo);
+    if (ammo < 4) {
+      this.insertDecal({ index: EDecal.AMMO, x: this.x, y: this.y });
+    }
+  }
+  get fuel() {
+    return this._fuel;
+  }
+  set fuel(fuel: number) {
+    this._fuel = Math.min(0, fuel);
+    if (fuel < 30) {
+      this.insertDecal({ index: EDecal.FUEL, x: this.x, y: this.y });
+    }
+  }
   get metadata(): IUnitMetadata {
     return unitMetadata[this.spriteIdx - 1];
   }

@@ -12,8 +12,12 @@ export default class Queue<T> {
     for (let i = 0; i < items.length; i++) {
       this.enqueue(items[i]);
     }
-    if (items) {
-    }
+  }
+
+  clear() {
+    this.head = undefined;
+    this.last = undefined;
+    this.size = 0;
   }
 
   enqueue(item: T) {

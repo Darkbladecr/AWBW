@@ -1,4 +1,4 @@
-import { ELayer } from "../gameMap";
+import { ELayer } from "../RenderEngine";
 import { movementArr } from "../movement";
 import { terrainFilenames } from "./files";
 import { Sprite } from "./Sprite";
@@ -356,15 +356,21 @@ export function getTerrainMetadata(index: ETerrain) {
   return metadata;
 }
 
+export interface ITerrainArgs {
+  index: ETerrain;
+  x: number;
+  y: number;
+}
+
 export class Terrain extends Sprite {
   spriteIdx: number;
   layerId = ELayer.STATIC;
   x: number;
   y: number;
 
-  constructor(terrainIdx: ETerrain, x: number, y: number) {
+  constructor({ index, x, y }: ITerrainArgs) {
     super();
-    this.spriteIdx = terrainIdx;
+    this.spriteIdx = index;
     this.x = x;
     this.y = y;
   }

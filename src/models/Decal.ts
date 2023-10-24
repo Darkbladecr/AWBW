@@ -1,4 +1,4 @@
-import { ELayer } from "../gameMap";
+import { ELayer } from "../RenderEngine";
 import { Sprite, ISpriteMetadata } from "./Sprite";
 
 export enum EDecal {
@@ -55,15 +55,21 @@ export function getDecalMetadata(index: EDecal) {
   return metadata;
 }
 
+export interface IDecalArgs {
+  index: EDecal;
+  x: number;
+  y: number;
+}
+
 export class Decal extends Sprite {
   spriteIdx: number;
   layerId = ELayer.DECALS;
   x: number;
   y: number;
 
-  constructor(decalIdx: EDecal, x: number, y: number) {
+  constructor({ index, x, y }: IDecalArgs) {
     super();
-    this.spriteIdx = decalIdx;
+    this.spriteIdx = index;
     this.x = x;
     this.y = y;
   }

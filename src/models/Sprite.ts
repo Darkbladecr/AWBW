@@ -1,5 +1,5 @@
 import { ParsedFrame } from "gifuct-js";
-import { ELayer } from "../gameMap";
+import { ELayer } from "../RenderEngine";
 
 export type SpriteArr<T> = [T, T, T];
 

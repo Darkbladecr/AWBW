@@ -1,44 +1,11 @@
-import { decompressFrames, parseGIF } from "gifuct-js";
-import { Building, isDynamicTerrain } from "./models/Building";
-import {
-  ETerrain,
-  ITerrainMetadata,
-  Terrain,
-  getTerrainMetadata,
-} from "./models/Terrain";
-import {
-  EUnit,
-  IUnitMetadata,
-  Unit,
-  countryUnits,
-  unitMetadata,
-} from "./models/Unit";
+import { Building, IBuildingArgs, isDynamicTerrain } from "./models/Building";
+import { Terrain } from "./models/Terrain";
+import { IUnitArgs, Unit } from "./models/Unit";
 
 import Queue from "./utils/Queue";
-import {
-  Decal,
-  EDecal,
-  IDecalMetadata,
-  getDecalMetadata,
-} from "./models/Decal";
-import { ISpriteMetadata } from "./models/Sprite";
-import { EMapStyle, STYLES, ECountry } from "./models/types";
-import { terrainFilenames, decalFilenames } from "./models/files";
-
-type TerrainSpriteMetadata = ITerrainMetadata & ISpriteMetadata;
-type UnitSpriteMetadata = IUnitMetadata & ISpriteMetadata;
-type DecalSpriteMetadata = IDecalMetadata & ISpriteMetadata;
-
-type SpriteMetadata =
-  | TerrainSpriteMetadata
-  | UnitSpriteMetadata
-  | DecalSpriteMetadata;
-
-export interface IAssets {
-  terrain: Map<ETerrain, TerrainSpriteMetadata>;
-  units: Map<EUnit, UnitSpriteMetadata>;
-  decals: Map<EDecal, DecalSpriteMetadata>;
-}
+import { Decal, EDecal, IDecalArgs } from "./models/Decal";
+import { EMapStyle } from "./models/types";
+import Assets, { SpriteMetadata } from "./Assets";
 
 export enum ELayer {
   STATIC,
@@ -85,21 +52,23 @@ interface IRenderArgs {
 
 // type MapLayers = [ETerrain, Building | null, Unit | null];
 
-class GameMap {
-  id: string;
+class RenderEngine {
   grid = 16;
   padding = 4;
   // grid width & height
   width: number;
   height: number;
+  widthPx: number;
+  heightPx: number;
   // map: MapLayers[][];
 
   // keep canvases in separate layers for efficient updates
+  debug = true;
 
   rootElement!: HTMLElement;
   layers!: GameMapLayers;
   buildings: Map<string, Building> = new Map();
-  mapMetadata: ITerrainMetadata[][];
+  // mapMetadata: ITerrainMetadata[][];
   units: Map<string, Unit> = new Map();
 
   requestedAnimationFrame: number | undefined;
@@ -116,33 +85,26 @@ class GameMap {
     },
   };
 
-  assets: IAssets = {
-    terrain: new Map(),
-    units: new Map(),
-    decals: new Map(),
-  };
+  assets!: Assets;
 
   private style: EMapStyle = EMapStyle.ANIMATED;
   lastRender = 0;
 
-  constructor(id: string, width: number, height: number) {
-    this.id = id;
+  constructor(root: HTMLElement, width: number, height: number) {
+    this.rootElement = root;
     this.width = width;
     this.height = height;
+    this.widthPx = width * this.grid + this.padding * 2;
+    this.heightPx = height * this.grid + this.padding * 2;
 
-    const el = document.getElementById(id);
-    if (!el) {
-      throw new Error(`#${id} not found on page`);
-    }
-    this.rootElement = el;
     // this.map = Array.from({ length: this.height }, () =>
     //   Array.from({ length: this.width }, () => [0, null, null])
     // );
-    this.mapMetadata = Array.from({ length: height }, () =>
-      Array(width).fill(null)
-    );
+    // this.mapMetadata = Array.from({ length: height }, () =>
+    //   Array(width).fill(null)
+    // );
 
-    this._setupCanvas();
+    this.setupCanvas();
     this._setupEventListeners();
   }
 
@@ -150,106 +112,25 @@ class GameMap {
    * load all assets asynchronously and assign to this.assets
    */
   async init() {
-    const [terrainAW1, terrainAW2, terrainANI] = await Promise.all(
-      STYLES.map((style) =>
-        Promise.all(this._loadGifs("terrain", style, terrainFilenames))
-      )
-    );
+    this.assets = await new Assets().init();
 
-    const [terrainAW1Frames, terrainAW2Frames, terrainANIFrames] =
-      await Promise.all(
-        [terrainAW1, terrainAW2, terrainANI].map((htmlEls) =>
-          Promise.all(htmlEls.map(this._decodeGif))
-        )
-      );
-
-    for (let i = 0; i < terrainAW1.length; i++) {
-      let index: ETerrain = i + 1;
-      // fix for deleted sprites from AWBW
-      if (index > 57) {
-        if (index < 81) {
-          continue;
-        } else {
-          index = index + (81 - 57) - 1;
-        }
-      }
-      if (index > 176) {
-        if (index < 181) {
-          continue;
-        } else {
-          index = index + (181 - 176) - 1;
-        }
-      }
-
-      this.assets.terrain.set(index, {
-        ...getTerrainMetadata(index),
-        offsetX: 0,
-        offsetY: 0,
-        sprites: [terrainAW1[i], terrainAW2[i], terrainANI[i]],
-        frames: [terrainAW1Frames[i], terrainAW2Frames[i], terrainANIFrames[i]],
-      });
-    }
-
-    const [unitAW1, unitAW2, unitANI] = await Promise.all(
-      STYLES.map((style) =>
-        Promise.all(this._loadGifs("units", style, countryUnits))
-      )
-    );
-
-    const [unitAW1Frames, unitAW2Frames, unitANIFrames] = await Promise.all(
-      [unitAW1, unitAW2, unitANI].map((htmlEls) =>
-        Promise.all(htmlEls.map(this._decodeGif))
-      )
-    );
-
-    for (let i = 0; i < unitAW1.length; i++) {
-      this.assets.units.set(i, {
-        ...unitMetadata[i],
-        offsetX: 0,
-        offsetY: 0,
-        sprites: [unitAW1[i], unitAW2[i], unitANI[i]],
-        frames: [unitAW1Frames[i], unitAW2Frames[i], unitANIFrames[i]],
-      });
-    }
-
-    const decals = await Promise.all(
-      this._loadGifs("decals", null, decalFilenames)
-    );
-    console.log(decals[15]);
-    const decalFrames = await Promise.all(decals.map(this._decodeGif));
-    console.log(decalFrames[15]);
-
-    for (let i = 0; i < decals.length; i++) {
-      this.assets.decals.set(i, {
-        name: decalFilenames[i],
-        offsetX: 0,
-        offsetY: 0,
-        sprites: [decals[i], decals[i], decals[i]],
-        frames: [decalFrames[i], decalFrames[i], decalFrames[i]],
-        ...getDecalMetadata(i),
-      });
-    }
+    this.render();
 
     return this;
   }
 
   /**
-   * decode gif from HTMLImageElement or URI
-   * @returns ParsedFrame
-   */
-  private async _decodeGif(img: HTMLImageElement | string) {
-    const uri = typeof img === "string" ? img : img.src;
-    const resp = await fetch(uri);
-    const buff = await resp.arrayBuffer();
-    const gif = parseGIF(buff);
-    const frames = decompressFrames(gif, true);
-    return frames;
-  }
-
-  /**
    * Create all canvas layers and initialize layer data on GameMap
    */
-  private _setupCanvas() {
+  setupCanvas(width?: number, height?: number) {
+    if (width) {
+      this.width = width;
+      this.widthPx = width * this.grid + this.padding * 2;
+    }
+    if (height) {
+      this.height = height;
+      this.heightPx = height * this.grid + this.padding * 2;
+    }
     this.rootElement.innerHTML = "";
     let layers: IMapLayer<any>[] = [];
     for (let i = 0; i < LAYERS.length; i++) {
@@ -259,8 +140,8 @@ class GameMap {
       canvas.id = label;
       canvas.classList.add("layer");
       canvas.style["zIndex"] = i.toString();
-      canvas.width = this.width * this.grid + this.padding * 2;
-      canvas.height = this.height * this.grid + this.padding * 2;
+      canvas.width = this.widthPx;
+      canvas.height = this.heightPx;
 
       this.rootElement.appendChild(canvas);
 
@@ -285,39 +166,148 @@ class GameMap {
       layers[ELayer.CURSOR],
       layers[ELayer.UI],
     ];
+    if (this.width > 0 && this.height > 0) {
+      this.layers[ELayer.STATIC].canvas.style.backgroundColor = "#000";
+    }
   }
 
   /**
-   * load all Gifs and create HTMLImageElements for them
-   * @returns
+   * Paint all assets onto the respective canvases and add items to
+   * renderQueue if they have GIF animations
    */
-  private _loadGifs(
-    path: string,
-    styleType: EMapStyle | null,
-    filenames: string[]
-  ): Promise<HTMLImageElement>[] {
-    let style = "";
-    if (styleType !== null) {
-      style = ["aw1", "aw2", "ani"][styleType] + "/";
+  render(args?: IRenderArgs) {
+    // const layersToRender = args?.layers ?? [];
+    const grid = args?.grid ?? false;
+
+    for (const { x, y, layerId } of this.gridIterator()) {
+      const item: SpriteType = this.layers[layerId].sprites[y][x];
+      if (item) {
+        this.renderQueue.enqueue(item);
+      }
     }
-    return filenames.map(
-      (filename) =>
-        new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = (err) => reject(err);
-          img.src = `sprites/${path}/${style}${filename}.gif`;
-        })
-    );
+    this._animate(0);
+
+    if (grid || this.debug) {
+      this._drawGrid();
+    }
+  }
+
+  /**
+   * reset animation queue and map
+   */
+  private _resetAnimate() {
+    if (this.requestedAnimationFrame) {
+      window.cancelAnimationFrame(this.requestedAnimationFrame);
+    }
+    this.renderQueue.clear();
+    this.render();
+  }
+
+  /**
+   * Insert terrain either onto the static or dynamic layer based on the asset type
+   */
+  insertTerrain({ index, x, y, capture }: IBuildingArgs) {
+    let item: Terrain | Building;
+    if (!isDynamicTerrain(index)) {
+      item = new Terrain({ index, x, y });
+      this.layers[ELayer.STATIC].sprites[y][x] = item;
+    } else {
+      item = new Building({ index, x, y, capture });
+      this.layers[ELayer.DYNAMIC].sprites[y][x] = item as Building;
+    }
+    this._resetAnimate();
+    // this.mapMetadata[y][x] = getTerrainMetadata(index);
+    return item;
+  }
+
+  /**
+   * Insert unit onto the unit layer with all the respective metadata
+   */
+  insertUnit({
+    countryIdx,
+    unitIdx,
+    x,
+    y,
+    hp,
+    ammo,
+    fuel,
+  }: Omit<IUnitArgs, "insertDecal">) {
+    const unit = new Unit({
+      insertDecal: this.insertDecal.bind(this),
+      countryIdx,
+      unitIdx,
+      x,
+      y,
+      hp,
+      ammo,
+      fuel,
+    });
+    this.layers[ELayer.UNITS].sprites[y][x] = unit;
+    this._resetAnimate();
+    return unit;
+  }
+
+  insertDecal({ index, x, y }: IDecalArgs) {
+    const decal = new Decal({ index, x, y });
+    this.layers[decal.layerId].sprites[y][x] = decal;
+    this._resetAnimate();
+    return decal;
+  }
+
+  private _insertCursor(x: number, y: number) {
+    const cursor = new Decal({ index: EDecal.SELECT, x, y });
+    if (cursor) {
+      cursor.layerId = ELayer.CURSOR;
+    }
+    return cursor;
+  }
+
+  /**
+   * Change the style of the GameMap and reset layer assets/animations
+   */
+  setStyle(style: EMapStyle) {
+    this.style = style;
+    if (this.requestedAnimationFrame) {
+      window.cancelAnimationFrame(this.requestedAnimationFrame);
+    }
+    this.renderQueue = new Queue();
+    for (const { x, y, layerId } of this.gridIterator()) {
+      const item: SpriteType = this.layers[layerId].sprites[y][x];
+      if (item) {
+        item.playing = false;
+        item.frameIndex = 0;
+        item.layerId = layerId;
+        this.renderQueue.enqueue(item);
+      }
+    }
+    this._animate(0);
+  }
+
+  /**
+   * Iterator to efficiently loop through all (x,y) coordinates on each layer
+   */
+  *gridIterator(args?: { layers?: number; width?: number; height?: number }) {
+    const layers = args?.layers ?? this.layers.length;
+    const width = args?.width ?? this.width;
+    const height = args?.height ?? this.height;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        for (let layerId = 0; layerId < layers; layerId++) {
+          yield { layerId, x, y };
+        }
+      }
+    }
   }
 
   /**
    * Draw grid ontop of map for debugging
    */
-  drawGrid() {
+  private _drawGrid() {
     const ctx = this.layers[ELayer.UI].ctx;
     // vertical
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.save();
+    ctx.strokeStyle = "#fafadd";
     for (let i = 0; i < this.width + 1; i++) {
       const iPx = i * this.grid + this.padding;
       const heightPx = this.height * this.grid + this.padding;
@@ -337,131 +327,13 @@ class GameMap {
       ctx.stroke();
       ctx.closePath();
     }
-    ctx.strokeStyle = "#fafadd";
-  }
-
-  /**
-   * Paint all assets onto the respective canvases and add items to
-   * renderQueue if they have GIF animations
-   */
-  render(args?: IRenderArgs) {
-    // const layersToRender = args?.layers ?? [];
-    const grid = args?.grid ?? false;
-
-    for (const { x, y, layerId } of this._makeGridIterator()) {
-      const item: SpriteType = this.layers[layerId].sprites[y][x];
-      if (item) {
-        item.layerId = layerId;
-        this.renderQueue.enqueue(item);
-      }
-    }
-    this.animate(0);
-
-    if (grid) {
-      this.drawGrid();
-    }
-    this.layers[ELayer.STATIC].canvas.style.backgroundColor = "#000";
-  }
-
-  /**
-   * Take a map string or JS array and assign assets to the respective layers
-   */
-  importMap(map: number[][] | string) {
-    if (typeof map === "string") {
-      map = map.split("\n").map((x) => x.split(",").map((y) => parseInt(y)));
-    }
-
-    this.height = map.length;
-    this.width = map[0].length;
-
-    this._setupCanvas();
-
-    for (const { x, y } of this._makeGridIterator({ layers: 1 })) {
-      const index = map[y][x];
-      this.insertTerrain(index, x, y);
-    }
-  }
-
-  /**
-   * Insert terrain either onto the static or dynamic layer based on the asset type
-   */
-  insertTerrain(index: ETerrain, x: number, y: number) {
-    let item: Terrain | Building;
-    if (!isDynamicTerrain(index)) {
-      item = new Terrain(index, x, y);
-      this.layers[ELayer.STATIC].sprites[y][x] = item;
-    } else {
-      item = new Building(index, x, y);
-      this.layers[ELayer.DYNAMIC].sprites[y][x] = item as Building;
-    }
-    this.mapMetadata[y][x] = getTerrainMetadata(index);
-    return item;
-  }
-
-  /**
-   * Insert unit onto the unit layer with all the respective metadata
-   */
-  insertUnit(countryIdx: ECountry, unitIdx: EUnit, x: number, y: number) {
-    const unit = new Unit(countryIdx, unitIdx, x, y);
-    this.layers[ELayer.UNITS].sprites[y][x] = unit;
-    return unit;
-  }
-
-  insertDecal(index: EDecal, x: number, y: number) {
-    const decal = new Decal(index, x, y);
-    if (index === EDecal.SELECT) {
-      decal.layerId = ELayer.CURSOR;
-    }
-    this.layers[decal.layerId].sprites[y][x] = decal;
-    return decal;
-  }
-
-  /**
-   * Change the style of the GameMap and reset layer assets/animations
-   */
-  setStyle(style: EMapStyle) {
-    this.style = style;
-    if (this.requestedAnimationFrame) {
-      window.cancelAnimationFrame(this.requestedAnimationFrame);
-    }
-    this.renderQueue = new Queue();
-    for (const { x, y, layerId } of this._makeGridIterator()) {
-      const item: SpriteType = this.layers[layerId].sprites[y][x];
-      if (item) {
-        item.playing = false;
-        item.frameIndex = 0;
-        item.layerId = layerId;
-        this.renderQueue.enqueue(item);
-      }
-    }
-    this.animate(0);
-  }
-
-  /**
-   * Iterator to efficiently loop through all (x,y) coordinates on each layer
-   */
-  private *_makeGridIterator(args?: {
-    layers?: number;
-    width?: number;
-    height?: number;
-  }) {
-    const layers = args?.layers ?? this.layers.length;
-    const width = args?.width ?? this.width;
-    const height = args?.height ?? this.height;
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        for (let layerId = 0; layerId < layers; layerId++) {
-          yield { layerId, x, y };
-        }
-      }
-    }
+    ctx.reset();
   }
 
   /**
    * animation orchestrator for each window.requestAnimationFrame()
    */
-  animate(timestamp: number) {
+  private _animate(timestamp: number) {
     const delta = timestamp - this.lastRender;
     this.lastRender = timestamp;
 
@@ -474,7 +346,7 @@ class GameMap {
 
     if (this.style === EMapStyle.ANIMATED) {
       this.requestedAnimationFrame = window.requestAnimationFrame(
-        this.animate.bind(this)
+        this._animate.bind(this)
       );
     }
   }
@@ -563,33 +435,12 @@ class GameMap {
   }
 
   private _clearCanvas(layerId: ELayer) {
-    this.layers[layerId].ctx.clearRect(
-      0,
-      0,
-      this.width * this.grid + this.padding * 2,
-      this.height * this.grid + this.padding * 2
-    );
-  }
-
-  private _debounce(func: Function, wait: number, immediate?: boolean) {
-    let timeout = 0;
-    const later = () => {
-      timeout = 0;
-      if (!immediate) {
-        func();
-      }
-    };
-    const callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) {
-      func();
-    }
+    this.layers[layerId].ctx.clearRect(0, 0, this.widthPx, this.heightPx);
   }
 
   private _cursorRender(x: number, y: number) {
     this._clearCanvas(ELayer.CURSOR);
-    const item = this.insertDecal(EDecal.SELECT, x, y);
+    const item = this._insertCursor(x, y);
     const asset = this.assets.decals.get(item.spriteIdx);
     if (asset) {
       this.layers[item.layerId].ctx.drawImage(
@@ -635,14 +486,15 @@ class GameMap {
 
     this.rootElement.addEventListener("mousedown", (e) => {
       e.preventDefault();
-      const decal = this.insertDecal(
-        EDecal.HP9,
-        this.mouse.gridX,
-        this.mouse.gridY
-      );
-      this.renderQueue.enqueue(decal);
+      console.log(this.mouse);
+      // const decal = this.insertDecal(
+      //   EDecal.HP9,
+      //   this.mouse.gridX,
+      //   this.mouse.gridY
+      // );
+      // this.renderQueue.enqueue(decal);
     });
   }
 }
 
-export default GameMap;
+export default RenderEngine;
