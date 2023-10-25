@@ -1,5 +1,5 @@
 import { ParsedFrame } from "gifuct-js";
-import { ELayer } from "../State";
+import { ELayer, State } from "../State";
 
 export type SpriteArr<T> = [T, T, T];
 
@@ -16,4 +16,9 @@ export class Sprite {
   needsDisposal = false;
   playing = false;
   timeElapsed = 0;
+  state: State;
+
+  constructor(state: State) {
+    this.state = state;
+  }
 }

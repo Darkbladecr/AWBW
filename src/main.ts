@@ -1,5 +1,4 @@
 import Game from "./Game";
-import { ETerrain } from "./models/Terrain";
 import { ECountry } from "./models/types";
 import { EUnit } from "./models/Unit";
 
@@ -47,19 +46,19 @@ const sampleMap = [
 async function main() {
   const game = await new Game("map", 0, 0).init();
   game.engine.importMap(sampleMap);
-  game.engine.insertTerrain({ index: ETerrain.ORANGESTARCOMTOWER, x: 0, y: 0 });
-  game.engine.insertTerrain({ index: ETerrain.PLAIN, x: 1, y: 0 });
-  const unit = game.engine.insertUnit({
+  // game.engine.insertTerrain({ index: ETerrain.ORANGESTARCOMTOWER, x: 0, y: 0 });
+  // game.engine.insertTerrain({ index: ETerrain.PLAIN, x: 1, y: 0 });
+  game.engine.insertUnit({
     countryIdx: ECountry.ORANGE_STAR,
     unitIdx: EUnit.INFANTRY,
     x: 0,
-    y: 2,
+    y: 0,
     hp: 9,
     ammo: 0,
-    fuel: 0,
+    // fuel: 1,
   });
-  console.log(unit);
-  console.log(game.state);
+  // console.log(unit);
+  // console.log(game.state);
   // gameMap.insertDecal(EDecal.CAPTURE, 0, 2);
   // console.log(gameMap.layers[ELayer.UNITS]);
   // setTimeout(() => gameMap.setStyle(EMapStyle.AW1), 1000);

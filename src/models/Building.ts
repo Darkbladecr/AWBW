@@ -140,11 +140,11 @@ export class Building extends Terrain {
     }
   }
 
-  constructor({ index, x, y, capture }: IBuildingArgs) {
+  constructor({ index, x, y, state, capture }: IBuildingArgs) {
     if (!Building.isDynamicTerrain(index)) {
       throw new Error(`Cannot create Building with terrainIdx: ${index}`);
     }
-    super({ index, x, y });
+    super({ index, x, y, state });
     this.country = Building.getCountry(index);
     this.capture ?? capture;
   }

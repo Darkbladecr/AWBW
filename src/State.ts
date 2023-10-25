@@ -7,6 +7,7 @@ import {
   IMapLayer,
   CO,
 } from "./models";
+import { Movement } from "./movement/Movement";
 import { EWeather } from "./weather";
 
 export interface IStateArgs {
@@ -53,7 +54,8 @@ export class State {
   day = 1;
 
   weather = EWeather.CLEAR;
-  layers: GameMapLayers;
+  layers!: GameMapLayers;
+  movement!: Movement;
 
   // grid width & height
   private _width = 0;
@@ -89,7 +91,7 @@ export class State {
     this.heightPx = height * this.grid + this.padding * 2;
     this.root = root;
 
-    this.layers = this._setupLayers();
+    this._setupLayers();
   }
 
   setGrid(x: number, y: number) {
@@ -100,7 +102,7 @@ export class State {
     this.widthPx = x * this.grid + this.padding * 2;
     this._height = y;
     this.heightPx = y * this.grid + this.padding * 2;
-    this.layers = this._setupLayers();
+    this._setupLayers();
   }
 
   get width() {
@@ -109,7 +111,7 @@ export class State {
   set width(x: number) {
     this._width = x;
     this.widthPx = x * this.grid + this.padding * 2;
-    this.layers = this._setupLayers();
+    this._setupLayers();
   }
 
   get height() {
@@ -118,7 +120,7 @@ export class State {
   set height(y: number) {
     this._height = y;
     this.heightPx = y * this.grid + this.padding * 2;
-    this.layers = this._setupLayers();
+    this._setupLayers();
   }
 
   private _setupLayers() {
@@ -151,6 +153,7 @@ export class State {
     if (this.width > 0 && this.height > 0) {
       layers[ELayer.STATIC].canvas.style.backgroundColor = "#000";
     }
-    return layers as GameMapLayers;
+    this.layers = layers as GameMapLayers;
+    this.movement = new Movement(this);
   }
 }

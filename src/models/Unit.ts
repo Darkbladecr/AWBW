@@ -1,4 +1,4 @@
-import { ELayer } from "../State";
+import { ELayer, State } from "../State";
 import { EMovementType } from "../movement/Movement";
 import { unitFilenames } from "./files";
 import { Sprite } from "./Sprite";
@@ -50,6 +50,7 @@ export interface IUnitMetadata {
 }
 
 export interface IUnitArgs {
+  state: State;
   insertDecal: (args: IDecalArgs) => void;
   countryIdx: ECountry;
   unitIdx: EUnit;
@@ -67,13 +68,19 @@ export interface IUnitArgs {
 export class Unit extends Sprite {
   spriteIdx: number;
   layerId = ELayer.UNITS;
-  country: ECountry;
-  unit: EUnit;
+  countryIdx: ECountry;
+  unitIdx: EUnit;
   name: string;
   _hp!: number;
   _ammo!: number;
   _fuel!: number;
   turnFuel = 0;
+
+  showMovement = false;
+  showVision = false;
+  showAttack = false;
+  exhausted = false;
+
   x: number;
   y: number;
   insertDecal: (args: IDecalArgs) => void;
@@ -474,6 +481,7 @@ export class Unit extends Sprite {
   }
 
   constructor({
+    state,
     insertDecal,
     countryIdx,
     unitIdx,
@@ -483,25 +491,25 @@ export class Unit extends Sprite {
     ammo,
     fuel,
   }: IUnitArgs) {
-    super();
+    super(state);
     this.insertDecal = insertDecal;
-    this.country = countryIdx;
-    this.unit = unitIdx;
+    this.countryIdx = countryIdx;
+    this.unitIdx = unitIdx;
     this.name = unitFilenames[unitIdx - 1];
     this.spriteIdx = Unit.getUnitCode(countryIdx, unitIdx);
     this.x = x;
     this.y = y;
-    this.hp = hp ?? 10;
-    this.ammo = ammo ?? 99;
-    this.fuel = fuel ?? 99;
+    this.hp = typeof hp === "number" ? hp : 10;
+    this.ammo = typeof ammo === "number" ? ammo : 9;
+    this.fuel = typeof fuel === "number" ? fuel : 99;
   }
 
   get hp() {
     return this._hp;
   }
   set hp(hp: number) {
-    this._hp = Math.min(0, hp);
-    if (hp < 10) {
+    this._hp = Math.max(0, hp);
+    if (this._hp < 10) {
       this.insertDecal({ index: hp - 1, x: this.x, y: this.y });
     }
   }
@@ -509,8 +517,8 @@ export class Unit extends Sprite {
     return this._ammo;
   }
   set ammo(ammo: number) {
-    this._ammo = Math.min(0, ammo);
-    if (ammo < 4) {
+    this._ammo = Math.max(0, ammo);
+    if (this._ammo < 4) {
       this.insertDecal({ index: EDecal.AMMO, x: this.x, y: this.y });
     }
   }
@@ -518,9 +526,16 @@ export class Unit extends Sprite {
     return this._fuel;
   }
   set fuel(fuel: number) {
-    this._fuel = Math.min(0, fuel);
-    if (fuel < 30) {
+    this._fuel = Math.max(0, fuel);
+    if (this._fuel < 30) {
       this.insertDecal({ index: EDecal.FUEL, x: this.x, y: this.y });
     }
+  }
+
+  availableMovement() {
+    if (this.exhausted) {
+      return [];
+    }
+    return this.state.movement.availableMovement(this);
   }
 }

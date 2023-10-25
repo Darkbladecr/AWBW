@@ -17,6 +17,12 @@ import Assets, { SpriteMetadata } from "./Assets";
 import { Movement } from "./movement/Movement";
 import { ELayer, State } from "./State";
 
+enum EHelperStyle {
+  MOVEMENT,
+  ATTACK,
+  VISION,
+}
+
 interface IRenderArgs {
   layers?: ELayer[];
   grid?: boolean;
@@ -109,10 +115,10 @@ class Engine {
   insertTerrain({ index, x, y, capture, rerender }: IInsertTerrain) {
     let item: Terrain | Building;
     if (!Building.isDynamicTerrain(index)) {
-      item = new Terrain({ index, x, y });
+      item = new Terrain({ index, x, y, state: this.state });
       this.state.layers[ELayer.STATIC].sprites[y][x] = item;
     } else {
-      item = new Building({ index, x, y, capture });
+      item = new Building({ index, x, y, state: this.state, capture });
       this.state.layers[ELayer.DYNAMIC].sprites[y][x] = item as Building;
     }
     if (rerender) {
@@ -132,8 +138,9 @@ class Engine {
     hp,
     ammo,
     fuel,
-  }: Omit<IUnitArgs, "insertDecal">) {
+  }: Omit<Omit<IUnitArgs, "insertDecal">, "state">) {
     const unit = new Unit({
+      state: this.state,
       insertDecal: this.insertDecal.bind(this),
       countryIdx,
       unitIdx,
@@ -171,7 +178,13 @@ class Engine {
       this.state.height
     )) {
       const index = map[y][x];
-      const item = this.insertTerrain({ index, x, y, rerender: false });
+      const item = this.insertTerrain({
+        index,
+        x,
+        y,
+        state: this.state,
+        rerender: false,
+      });
       if (
         item instanceof Building &&
         Building.hqIndexes.includes(item.spriteIdx)
@@ -380,6 +393,42 @@ class Engine {
     }
   }
 
+  private _paintGrid({
+    x,
+    y,
+    style,
+  }: {
+    x: number;
+    y: number;
+    style: EHelperStyle;
+  }) {
+    const ctx = this.state.layers[ELayer.HELPERS].ctx;
+    ctx.save();
+    if (style === EHelperStyle.MOVEMENT) {
+      ctx.fillStyle = "rgba(67, 217, 228, 0.4)";
+      ctx.strokeStyle = "rgb(22, 98, 184)";
+    } else if (style === EHelperStyle.ATTACK) {
+      ctx.fillStyle = "rgba(255, 27, 27, 0.4)";
+      ctx.strokeStyle = "rgb(155, 0, 0)";
+    } else if (style === EHelperStyle.VISION) {
+      ctx.fillStyle = "rgba(236, 221, 9, 0.4)";
+      ctx.strokeStyle = "rgb(255, 115, 0)";
+    }
+    ctx.fillRect(
+      x * this.state.grid + this.state.padding,
+      y * this.state.grid + this.state.padding,
+      this.state.grid,
+      this.state.grid
+    );
+    ctx.strokeRect(
+      x * this.state.grid + this.state.padding,
+      y * this.state.grid + this.state.padding,
+      this.state.grid,
+      this.state.grid
+    );
+    ctx.restore();
+  }
+
   private _setupEventListeners() {
     this.state.root.addEventListener("mousemove", (e) => {
       const x = Math.min(
@@ -415,7 +464,26 @@ class Engine {
 
     this.state.root.addEventListener("mousedown", (e) => {
       e.preventDefault();
-      console.log(this.mouse);
+      const unit =
+        this.state.layers[ELayer.UNITS].sprites[this.mouse.gridY][
+          this.mouse.gridX
+        ];
+      if (unit) {
+        console.log(unit);
+        const ctx = this.state.layers[ELayer.HELPERS].ctx;
+        if (unit.showMovement) {
+          unit.showMovement = false;
+          ctx.clearRect(0, 0, this.state.widthPx, this.state.heightPx);
+        } else {
+          unit.showMovement = true;
+          const availableMovementArr = this.movement.availableMovement(unit);
+
+          for (const coord of availableMovementArr) {
+            this._paintGrid({ ...coord, style: EHelperStyle.MOVEMENT });
+          }
+        }
+      }
+      // console.log(this.mouse);
       // const decal = this.insertDecal(
       //   EDecal.HP9,
       //   this.mouse.gridX,

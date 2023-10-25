@@ -3,7 +3,7 @@ import {
   IMovementWeatherArr,
   Movement,
 } from "../movement/Movement";
-import { ELayer } from "../State";
+import { ELayer, State } from "../State";
 import { terrainFilenames } from "./files";
 import { Sprite } from "./Sprite";
 
@@ -190,6 +190,7 @@ export interface ITerrainArgs {
   index: ETerrain;
   x: number;
   y: number;
+  state: State;
 }
 
 export class Terrain extends Sprite {
@@ -371,8 +372,8 @@ export class Terrain extends Sprite {
     return metadata;
   }
 
-  constructor({ index, x, y }: ITerrainArgs) {
-    super();
+  constructor({ index, x, y, state }: ITerrainArgs) {
+    super(state);
     this.spriteIdx = index;
     this.x = x;
     this.y = y;
