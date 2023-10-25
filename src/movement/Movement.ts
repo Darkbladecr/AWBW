@@ -2,6 +2,7 @@ import { IMapLayer } from "../RenderEngine";
 import { Building } from "../models/Building";
 import { ITerrainMetadata, Terrain } from "../models/Terrain";
 import { Unit } from "../models/Unit";
+import { ECountry } from "../models/types";
 import { EWeather } from "../weather";
 
 export const NULL_MOVEMENT: IMovementArr = [0, 0, 0, 0, 0, 0, 0, 0];
@@ -43,14 +44,17 @@ export interface IMovementArgs {
   terrain: IMapLayer<Terrain>;
   buildings: IMapLayer<Building>;
   units: IMapLayer<Unit>;
+  countryTurn: ECountry;
 }
 
 export class Movement {
   weather = EWeather.CLEAR;
+  countryTurn: ECountry;
   terrainMap: ITerrainMetadata[][];
   movementCost: [IMovementArr, IMovementArr, IMovementArr][][];
 
-  constructor({ terrain, buildings, units }: IMovementArgs) {
+  constructor({ terrain, buildings, units, countryTurn }: IMovementArgs) {
+    this.countryTurn = countryTurn;
     const height = terrain.sprites.length;
     const width = terrain.sprites[0]?.length ?? 0;
 

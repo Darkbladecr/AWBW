@@ -1,20 +1,15 @@
 import { decompressFrames, parseGIF } from "gifuct-js";
-import {
-  ETerrain,
-  ITerrainMetadata,
-  getTerrainMetadata,
-} from "./models/Terrain";
-import {
-  EUnit,
-  IUnitMetadata,
-  countryUnits,
-  unitMetadata,
-} from "./models/Unit";
+import { ETerrain, ITerrainMetadata, Terrain } from "./models/Terrain";
+import { EUnit, IUnitMetadata, Unit } from "./models/Unit";
 
 import { EDecal, IDecalMetadata, getDecalMetadata } from "./models/Decal";
 import { ISpriteMetadata } from "./models/Sprite";
-import { EMapStyle, STYLES } from "./models/types";
-import { terrainFilenames, decalFilenames } from "./models/files";
+import { EMapStyle, STYLES, countryCodes } from "./models/types";
+import {
+  terrainFilenames,
+  decalFilenames,
+  unitFilenames,
+} from "./models/files";
 
 export type TerrainSpriteMetadata = ITerrainMetadata & ISpriteMetadata;
 export type UnitSpriteMetadata = IUnitMetadata & ISpriteMetadata;
@@ -37,6 +32,10 @@ class Assets {
 
     return this;
   }
+
+  static countryUnits = countryCodes
+    .map((countryCode) => unitFilenames.map((unit) => `${countryCode}${unit}`))
+    .flat();
 
   private async _loadAssets() {
     const [terrainAW1, terrainAW2, terrainANI] = await Promise.all(
@@ -71,7 +70,7 @@ class Assets {
       }
 
       this.terrain.set(index, {
-        ...getTerrainMetadata(index),
+        ...Terrain.metadata(index),
         offsetX: 0,
         offsetY: 0,
         sprites: [terrainAW1[i], terrainAW2[i], terrainANI[i]],
@@ -81,7 +80,7 @@ class Assets {
 
     const [unitAW1, unitAW2, unitANI] = await Promise.all(
       STYLES.map((style) =>
-        Promise.all(this._loadGifs("units", style, countryUnits))
+        Promise.all(this._loadGifs("units", style, Assets.countryUnits))
       )
     );
 
@@ -93,7 +92,7 @@ class Assets {
 
     for (let i = 0; i < unitAW1.length; i++) {
       this.units.set(i, {
-        ...unitMetadata[i],
+        ...Unit.metadata[i],
         offsetX: 0,
         offsetY: 0,
         sprites: [unitAW1[i], unitAW2[i], unitANI[i]],

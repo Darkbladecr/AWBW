@@ -1,14 +1,10 @@
 import { Building, IBuildingArgs, isDynamicTerrain } from "./models/Building";
-import {
-  ITerrainMetadata,
-  Terrain,
-  getTerrainMetadata,
-} from "./models/Terrain";
+import { Terrain } from "./models/Terrain";
 import { IUnitArgs, Unit } from "./models/Unit";
 
 import Queue from "./utils/Queue";
 import { Decal, EDecal, IDecalArgs } from "./models/Decal";
-import { EMapStyle } from "./models/types";
+import { ECountry, EMapStyle } from "./models/types";
 import Assets, { SpriteMetadata } from "./Assets";
 import { Movement } from "./movement/Movement";
 
@@ -76,6 +72,7 @@ class RenderEngine {
   height: number;
   widthPx: number;
   heightPx: number;
+  countryTurn: ECountry;
 
   // keep canvases in separate layers for efficient updates
   debug = true;
@@ -103,7 +100,13 @@ class RenderEngine {
   private _style: EMapStyle = EMapStyle.ANIMATED;
   lastRender = 0;
 
-  constructor(root: HTMLElement, width: number, height: number) {
+  constructor(
+    root: HTMLElement,
+    width: number,
+    height: number,
+    countryTurn: ECountry
+  ) {
+    this.countryTurn = countryTurn;
     this.rootElement = root;
     this.width = width;
     this.height = height;
@@ -193,6 +196,7 @@ class RenderEngine {
     // const layersToRender = args?.layers ?? [];
     const grid = args?.grid ?? false;
     this.movement = new Movement({
+      countryTurn: this.countryTurn,
       terrain: this.layers[ELayer.STATIC],
       buildings: this.layers[ELayer.DYNAMIC],
       units: this.layers[ELayer.UNITS],

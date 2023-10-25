@@ -1,10 +1,12 @@
 import RenderEngine from "./RenderEngine";
+import { ECountry } from "./models/types";
 
 class Game {
   id: string;
   // grid width & height
   width: number;
   height: number;
+  countryTurn = ECountry.ORANGE_STAR;
   // map: MapLayers[][];
   debug = true;
 
@@ -35,7 +37,8 @@ class Game {
     this.engine = await new RenderEngine(
       this.rootElement,
       this.width,
-      this.height
+      this.height,
+      this.countryTurn
     ).init();
 
     return this;
