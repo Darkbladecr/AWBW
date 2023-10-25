@@ -125,10 +125,11 @@ export class Movement {
         } else if (building) {
           this.terrainMap[y][x] = Building.metadata(building.spriteIdx);
         } else {
-          console.warn("incomplete map");
+          // incomplete map therefore return early
           return;
         }
 
+        // TODO: breaks if you want to see movement of the other team's units
         const unit = this.state.layers[ELayer.UNITS].sprites[y][x];
         if (unit && unit.countryIdx !== players[playerIdxTurn].country) {
           this.movementCost[y][x] = [

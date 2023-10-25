@@ -14,7 +14,6 @@ import {
 } from "./models";
 import Queue from "./utils/Queue";
 import Assets, { SpriteMetadata } from "./Assets";
-import { Movement } from "./movement/Movement";
 import { ELayer, State } from "./State";
 
 enum EHelperStyle {
@@ -50,7 +49,6 @@ class Engine {
   };
 
   assets!: Assets;
-  movement!: Movement;
 
   private _style: EMapStyle = EMapStyle.ANIMATED;
   lastRender = 0;
@@ -79,7 +77,6 @@ class Engine {
   render(args?: IRenderArgs) {
     // const layersToRender = args?.layers ?? [];
     const grid = args?.grid ?? false;
-    this.movement = new Movement(this.state);
 
     for (const { x, y, layerId } of State.gridIterator(
       this.state.layers.length,
@@ -196,7 +193,6 @@ class Engine {
       }
     }
     this.render();
-    console.log(this.movement);
   }
 
   private _insertCursor(x: number, y: number) {
@@ -476,7 +472,7 @@ class Engine {
           ctx.clearRect(0, 0, this.state.widthPx, this.state.heightPx);
         } else {
           unit.showMovement = true;
-          const availableMovementArr = this.movement.availableMovement(unit);
+          const availableMovementArr = unit.availableMovement();
 
           for (const coord of availableMovementArr) {
             this._paintGrid({ ...coord, style: EHelperStyle.MOVEMENT });
