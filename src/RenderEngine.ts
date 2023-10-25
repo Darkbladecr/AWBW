@@ -1,4 +1,4 @@
-import { Building, IBuildingArgs, isDynamicTerrain } from "./models/Building";
+import { Building, IBuildingArgs } from "./models/Building";
 import { Terrain } from "./models/Terrain";
 import { IUnitArgs, Unit } from "./models/Unit";
 
@@ -231,7 +231,7 @@ class RenderEngine {
    */
   insertTerrain({ index, x, y, capture, rerender }: IInsertTerrain) {
     let item: Terrain | Building;
-    if (!isDynamicTerrain(index)) {
+    if (!Building.isDynamicTerrain(index)) {
       item = new Terrain({ index, x, y });
       this.layers[ELayer.STATIC].sprites[y][x] = item;
     } else {

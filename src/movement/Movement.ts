@@ -5,8 +5,6 @@ import { Unit } from "../models/Unit";
 import { ECountry } from "../models/types";
 import { EWeather } from "../weather";
 
-export const NULL_MOVEMENT: IMovementArr = [0, 0, 0, 0, 0, 0, 0, 0];
-
 export enum EMovementType {
   FOOT,
   BAZOOKA,
@@ -82,9 +80,9 @@ export class Movement {
           const unitItem = units.sprites[y][x];
           if (unitItem) {
             this.movementCost[y][x] = [
-              NULL_MOVEMENT,
-              NULL_MOVEMENT,
-              NULL_MOVEMENT,
+              Movement.nullArr,
+              Movement.nullArr,
+              Movement.nullArr,
             ];
           } else {
             this.movementCost[y][x] = this.terrainMap[y][x].movement;
@@ -93,4 +91,6 @@ export class Movement {
       }
     }
   }
+
+  static nullArr: IMovementArr = [0, 0, 0, 0, 0, 0, 0, 0];
 }

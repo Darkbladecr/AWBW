@@ -27,37 +27,6 @@ export interface IDecalMetadata extends ISpriteMetadata {
   name: string;
 }
 
-export function getDecalMetadata(index: EDecal) {
-  const metadata: Partial<ISpriteMetadata> = {
-    offsetX: 0,
-    offsetY: 0,
-  };
-  if (index <= EDecal.HP9) {
-    metadata.offsetX = 7;
-    metadata.offsetY = -1;
-  } else if (index === EDecal.AMMO) {
-    metadata.offsetX = 8;
-    metadata.offsetY = -5;
-  } else if (index === EDecal.FUEL) {
-    metadata.offsetX = 8;
-    metadata.offsetY = -1;
-  } else if (index >= EDecal.CAPTURE && index <= EDecal.SUB_DIVE) {
-    metadata.offsetX = -1;
-    metadata.offsetY = 0;
-  } else if (index === EDecal.SUPPLY_RIGHT || index === EDecal.TRAP_RIGHT) {
-    metadata.offsetX = 16;
-    metadata.offsetY = -1;
-  } else if (index === EDecal.TARGET) {
-    metadata.offsetX = -2;
-    metadata.offsetY = -2;
-  } else if (index === EDecal.SELECT) {
-    metadata.offsetX = -5;
-    metadata.offsetY = -5;
-  }
-
-  return metadata;
-}
-
 export interface IDecalArgs {
   index: EDecal;
   x: number;
@@ -89,5 +58,36 @@ export class Decal extends Sprite {
     } else {
       this.layerId = ELayer.UI;
     }
+  }
+
+  static metadata(index: EDecal) {
+    const metadata: Partial<ISpriteMetadata> = {
+      offsetX: 0,
+      offsetY: 0,
+    };
+    if (index <= EDecal.HP9) {
+      metadata.offsetX = 7;
+      metadata.offsetY = -1;
+    } else if (index === EDecal.AMMO) {
+      metadata.offsetX = 8;
+      metadata.offsetY = -5;
+    } else if (index === EDecal.FUEL) {
+      metadata.offsetX = 8;
+      metadata.offsetY = -1;
+    } else if (index >= EDecal.CAPTURE && index <= EDecal.SUB_DIVE) {
+      metadata.offsetX = -1;
+      metadata.offsetY = 0;
+    } else if (index === EDecal.SUPPLY_RIGHT || index === EDecal.TRAP_RIGHT) {
+      metadata.offsetX = 16;
+      metadata.offsetY = -1;
+    } else if (index === EDecal.TARGET) {
+      metadata.offsetX = -2;
+      metadata.offsetY = -2;
+    } else if (index === EDecal.SELECT) {
+      metadata.offsetX = -5;
+      metadata.offsetY = -5;
+    }
+
+    return metadata;
   }
 }

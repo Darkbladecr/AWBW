@@ -2,7 +2,7 @@ import { decompressFrames, parseGIF } from "gifuct-js";
 import { ETerrain, ITerrainMetadata, Terrain } from "./models/Terrain";
 import { EUnit, IUnitMetadata, Unit } from "./models/Unit";
 
-import { EDecal, IDecalMetadata, getDecalMetadata } from "./models/Decal";
+import { Decal, EDecal, IDecalMetadata } from "./models/Decal";
 import { ISpriteMetadata } from "./models/Sprite";
 import { EMapStyle, STYLES, countryCodes } from "./models/types";
 import {
@@ -112,7 +112,7 @@ class Assets {
         offsetY: 0,
         sprites: [decals[i], decals[i], decals[i]],
         frames: [decalFrames[i], decalFrames[i], decalFrames[i]],
-        ...getDecalMetadata(i),
+        ...Decal.metadata(i),
       });
     }
   }

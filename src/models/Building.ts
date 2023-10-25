@@ -2,13 +2,6 @@ import { ELayer } from "../RenderEngine";
 import { ETerrain, ITerrainArgs, Terrain } from "./Terrain";
 import { ECountry } from "./types";
 
-export function isDynamicTerrain(index: ETerrain) {
-  return (
-    index >= ETerrain.NEUTRALCITY ||
-    (index < ETerrain.VPIPE && index > ETerrain.WPIPEEND)
-  );
-}
-
 export interface IBuildingArgs extends ITerrainArgs {
   capture?: number;
 }
@@ -20,12 +13,19 @@ export class Building extends Terrain {
   // TODO: resupply metadata
 
   constructor({ index, x, y, capture }: IBuildingArgs) {
-    if (!isDynamicTerrain(index)) {
+    if (!Building.isDynamicTerrain(index)) {
       throw new Error(`Cannot create Building with terrainIdx: ${index}`);
     }
     super({ index, x, y });
     this.country = Building.getCountry(index);
     this.capture ?? capture;
+  }
+
+  static isDynamicTerrain(index: ETerrain) {
+    return (
+      index >= ETerrain.NEUTRALCITY ||
+      (index < ETerrain.VPIPE && index > ETerrain.WPIPEEND)
+    );
   }
 
   static getCountry(index: ETerrain) {
