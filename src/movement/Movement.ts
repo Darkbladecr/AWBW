@@ -113,7 +113,7 @@ export class Movement {
       Array.from({ length: 3 }, () => Array.from({ length: 8 }).fill(0))
     );
 
-    if (height < 1 || width < 1) {
+    if (players.length === 0) {
       return;
     }
     for (let y = 0; y < height; y++) {
@@ -125,8 +125,7 @@ export class Movement {
         } else if (building) {
           this.terrainMap[y][x] = Building.metadata(building.spriteIdx);
         } else {
-          // incomplete map therefore return early
-          return;
+          throw new Error("Map is incomplete for Movement init");
         }
 
         // TODO: breaks if you want to see movement of the other team's units

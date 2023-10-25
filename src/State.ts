@@ -154,6 +154,5 @@ export class State {
       layers[ELayer.STATIC].canvas.style.backgroundColor = "#000";
     }
     this.layers = layers as GameMapLayers;
-    this.movement = new Movement(this);
   }
 }

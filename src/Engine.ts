@@ -15,6 +15,7 @@ import {
 import Queue from "./utils/Queue";
 import Assets, { SpriteMetadata } from "./Assets";
 import { ELayer, State } from "./State";
+import { Movement } from "./movement/Movement";
 
 enum EHelperStyle {
   MOVEMENT,
@@ -77,6 +78,7 @@ class Engine {
   render(args?: IRenderArgs) {
     // const layersToRender = args?.layers ?? [];
     const grid = args?.grid ?? false;
+    this.state.movement = new Movement(this.state);
 
     for (const { x, y, layerId } of State.gridIterator(
       this.state.layers.length,
