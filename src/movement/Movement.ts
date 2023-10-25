@@ -146,7 +146,6 @@ export class Movement {
   availableMovement(unit: Unit) {
     const { fuel } = unit;
     const { movementType, mp } = Unit.metadata[unit.unitIdx];
-    console.log({ movementType, fuel, mp });
     const { width, height, weather } = this.state;
     const movementCostGrid = Movement.createGrid<number>(width, height, 0);
 

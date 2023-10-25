@@ -467,7 +467,6 @@ class Engine {
           this.mouse.gridX
         ];
       if (unit) {
-        console.log(unit);
         const ctx = this.state.layers[ELayer.HELPERS].ctx;
         if (unit.showMovement) {
           unit.showMovement = false;
