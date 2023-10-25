@@ -6,3 +6,4 @@ export * from "./Sprite";
 export * from "./Terrain";
 export * from "./types";
 export * from "./Unit";
+export * from "./CO";

@@ -1,6 +1,8 @@
 import {
   Building,
+  CO,
   Decal,
+  ECO,
   EDecal,
   EMapStyle,
   IBuildingArgs,
@@ -175,7 +177,7 @@ class Engine {
         Building.hqIndexes.includes(item.spriteIdx)
       ) {
         this.state.players.push({
-          co: "",
+          co: new CO(ECO.ANDY),
           country: item.country,
         });
       }

@@ -1,4 +1,12 @@
-import { Building, Decal, Terrain, Unit, ECountry, IMapLayer } from "./models";
+import {
+  Building,
+  Decal,
+  Terrain,
+  Unit,
+  ECountry,
+  IMapLayer,
+  CO,
+} from "./models";
 import { EWeather } from "./weather";
 
 export interface IStateArgs {
@@ -9,7 +17,7 @@ export interface IStateArgs {
 }
 
 export interface IPlayer {
-  co: string;
+  co: CO;
   country: ECountry;
 }
 
