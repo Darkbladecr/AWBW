@@ -1,4 +1,4 @@
-import { ELayer } from "../RenderEngine";
+import { ELayer } from "../State";
 import { Sprite, ISpriteMetadata } from "./Sprite";
 
 export enum EDecal {
@@ -39,27 +39,6 @@ export class Decal extends Sprite {
   x: number;
   y: number;
 
-  constructor({ index, x, y }: IDecalArgs) {
-    super();
-    this.spriteIdx = index;
-    this.x = x;
-    this.y = y;
-
-    if (index <= EDecal.HP9) {
-      this.layerId = ELayer.HP;
-    } else if (index === EDecal.AMMO) {
-      this.layerId = ELayer.AMMO;
-    } else if (index === EDecal.FUEL) {
-      this.layerId = ELayer.FUEL;
-    } else if (index >= EDecal.CAPTURE && index <= EDecal.SUB_DIVE) {
-      this.layerId = ELayer.CAPTURE;
-    } else if (index === EDecal.SELECT || index === EDecal.TARGET) {
-      this.layerId = ELayer.CURSOR;
-    } else {
-      this.layerId = ELayer.UI;
-    }
-  }
-
   static metadata(index: EDecal) {
     const metadata: Partial<ISpriteMetadata> = {
       offsetX: 0,
@@ -89,5 +68,26 @@ export class Decal extends Sprite {
     }
 
     return metadata;
+  }
+
+  constructor({ index, x, y }: IDecalArgs) {
+    super();
+    this.spriteIdx = index;
+    this.x = x;
+    this.y = y;
+
+    if (index <= EDecal.HP9) {
+      this.layerId = ELayer.HP;
+    } else if (index === EDecal.AMMO) {
+      this.layerId = ELayer.AMMO;
+    } else if (index === EDecal.FUEL) {
+      this.layerId = ELayer.FUEL;
+    } else if (index >= EDecal.CAPTURE && index <= EDecal.SUB_DIVE) {
+      this.layerId = ELayer.CAPTURE;
+    } else if (index === EDecal.SELECT || index === EDecal.TARGET) {
+      this.layerId = ELayer.CURSOR;
+    } else {
+      this.layerId = ELayer.UI;
+    }
   }
 }

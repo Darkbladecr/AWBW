@@ -46,7 +46,7 @@ const sampleMap = [
 
 async function main() {
   const game = await new Game("map", 0, 0).init();
-  game.importMap(sampleMap);
+  game.engine.importMap(sampleMap);
   game.engine.insertTerrain({ index: ETerrain.ORANGESTARCOMTOWER, x: 0, y: 0 });
   game.engine.insertTerrain({ index: ETerrain.PLAIN, x: 1, y: 0 });
   const unit = game.engine.insertUnit({
@@ -59,6 +59,7 @@ async function main() {
     fuel: 0,
   });
   console.log(unit);
+  console.log(game.state);
   // gameMap.insertDecal(EDecal.CAPTURE, 0, 2);
   // console.log(gameMap.layers[ELayer.UNITS]);
   // setTimeout(() => gameMap.setStyle(EMapStyle.AW1), 1000);

@@ -1,59 +1,19 @@
-import { Building, IBuildingArgs } from "./models/Building";
-import { Terrain } from "./models/Terrain";
-import { IUnitArgs, Unit } from "./models/Unit";
-
+import {
+  Building,
+  Decal,
+  EDecal,
+  EMapStyle,
+  IBuildingArgs,
+  IDecalArgs,
+  IUnitArgs,
+  SpriteType,
+  Terrain,
+  Unit,
+} from "./models";
 import Queue from "./utils/Queue";
-import { Decal, EDecal, IDecalArgs } from "./models/Decal";
-import { ECountry, EMapStyle } from "./models/types";
 import Assets, { SpriteMetadata } from "./Assets";
 import { Movement } from "./movement/Movement";
-
-export enum ELayer {
-  STATIC,
-  DYNAMIC,
-  HELPERS,
-  UNITS,
-  HP,
-  FUEL,
-  AMMO,
-  CAPTURE,
-  CURSOR,
-  UI,
-}
-export const LAYERS = [
-  "static",
-  "dynamic",
-  "helpers",
-  "units",
-  "hp",
-  "fuel",
-  "ammo",
-  "capture",
-  "cursor",
-  "ui",
-];
-
-type SpriteType = Terrain | Building | Unit | Decal;
-
-export interface IMapLayer<T extends SpriteType> {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
-  imageData: ImageData | undefined;
-  sprites: (T | null)[][];
-}
-
-export type GameMapLayers = [
-  IMapLayer<Terrain>,
-  IMapLayer<Building>,
-  IMapLayer<any>, // helpers
-  IMapLayer<Unit>,
-  IMapLayer<Decal>, // hp
-  IMapLayer<Decal>, // fuel
-  IMapLayer<Decal>, // ammo
-  IMapLayer<Decal>, // capture
-  IMapLayer<Decal>, // cursor
-  IMapLayer<any> // UI
-];
+import { ELayer, State } from "./State";
 
 interface IRenderArgs {
   layers?: ELayer[];
@@ -64,21 +24,8 @@ interface IInsertTerrain extends IBuildingArgs {
   rerender?: boolean;
 }
 
-class RenderEngine {
-  grid = 16;
-  padding = 4;
-  // grid width & height
-  width: number;
-  height: number;
-  widthPx: number;
-  heightPx: number;
-  countryTurn: ECountry;
-
-  // keep canvases in separate layers for efficient updates
-  debug = true;
-
-  rootElement!: HTMLElement;
-  layers!: GameMapLayers;
+class Engine {
+  state: State;
 
   requestedAnimationFrame: number | undefined;
   renderQueue = new Queue<SpriteType>();
@@ -100,24 +47,9 @@ class RenderEngine {
   private _style: EMapStyle = EMapStyle.ANIMATED;
   lastRender = 0;
 
-  constructor(
-    root: HTMLElement,
-    width: number,
-    height: number,
-    countryTurn: ECountry
-  ) {
-    this.countryTurn = countryTurn;
-    this.rootElement = root;
-    this.width = width;
-    this.height = height;
-    this.widthPx = width * this.grid + this.padding * 2;
-    this.heightPx = height * this.grid + this.padding * 2;
+  constructor(state: State) {
+    this.state = state;
 
-    // this.map = Array.from({ length: this.height }, () =>
-    //   Array.from({ length: this.width }, () => [0, null, null])
-    // );
-
-    this.setupCanvas();
     this._setupEventListeners();
   }
 
@@ -133,84 +65,27 @@ class RenderEngine {
   }
 
   /**
-   * Create all canvas layers and initialize layer data on GameMap
-   */
-  setupCanvas(width?: number, height?: number) {
-    if (width) {
-      this.width = width;
-      this.widthPx = width * this.grid + this.padding * 2;
-    }
-    if (height) {
-      this.height = height;
-      this.heightPx = height * this.grid + this.padding * 2;
-    }
-
-    this.rootElement.innerHTML = "";
-    let layers: IMapLayer<any>[] = [];
-    for (let i = 0; i < LAYERS.length; i++) {
-      const label = LAYERS[i];
-
-      const canvas = document.createElement("canvas");
-      canvas.id = label;
-      canvas.classList.add("layer");
-      canvas.style["zIndex"] = i.toString();
-      canvas.width = this.widthPx;
-      canvas.height = this.heightPx;
-
-      this.rootElement.appendChild(canvas);
-
-      const ctx = canvas.getContext("2d", {
-        willReadFrequently: true,
-      }) as CanvasRenderingContext2D;
-      layers.push({
-        canvas,
-        ctx,
-        imageData: ctx.getImageData(0, 0, canvas.width, canvas.height),
-        sprites: Array.from({ length: this.height }, () =>
-          Array(this.width).fill(null)
-        ),
-      });
-    }
-    this.layers = [
-      layers[ELayer.STATIC],
-      layers[ELayer.DYNAMIC],
-      layers[ELayer.HELPERS],
-      layers[ELayer.UNITS],
-      layers[ELayer.HP],
-      layers[ELayer.FUEL],
-      layers[ELayer.AMMO],
-      layers[ELayer.CAPTURE],
-      layers[ELayer.CURSOR],
-      layers[ELayer.UI],
-    ];
-    if (this.width > 0 && this.height > 0) {
-      this.layers[ELayer.STATIC].canvas.style.backgroundColor = "#000";
-    }
-  }
-
-  /**
    * Paint all assets onto the respective canvases and add items to
    * renderQueue if they have GIF animations
    */
   render(args?: IRenderArgs) {
     // const layersToRender = args?.layers ?? [];
     const grid = args?.grid ?? false;
-    this.movement = new Movement({
-      countryTurn: this.countryTurn,
-      terrain: this.layers[ELayer.STATIC],
-      buildings: this.layers[ELayer.DYNAMIC],
-      units: this.layers[ELayer.UNITS],
-    });
+    this.movement = new Movement(this.state);
 
-    for (const { x, y, layerId } of this.gridIterator()) {
-      const item: SpriteType = this.layers[layerId].sprites[y][x];
+    for (const { x, y, layerId } of State.gridIterator(
+      this.state.layers.length,
+      this.state.width,
+      this.state.height
+    )) {
+      const item: SpriteType = this.state.layers[layerId].sprites[y][x];
       if (item) {
         this.renderQueue.enqueue(item);
       }
     }
     this._animate(0);
 
-    if (grid || this.debug) {
+    if (grid || this.state.debug) {
       this._drawGrid();
     }
   }
@@ -233,10 +108,10 @@ class RenderEngine {
     let item: Terrain | Building;
     if (!Building.isDynamicTerrain(index)) {
       item = new Terrain({ index, x, y });
-      this.layers[ELayer.STATIC].sprites[y][x] = item;
+      this.state.layers[ELayer.STATIC].sprites[y][x] = item;
     } else {
       item = new Building({ index, x, y, capture });
-      this.layers[ELayer.DYNAMIC].sprites[y][x] = item as Building;
+      this.state.layers[ELayer.DYNAMIC].sprites[y][x] = item as Building;
     }
     if (rerender) {
       this._resetAnimate();
@@ -266,16 +141,47 @@ class RenderEngine {
       ammo,
       fuel,
     });
-    this.layers[ELayer.UNITS].sprites[y][x] = unit;
+    this.state.layers[ELayer.UNITS].sprites[y][x] = unit;
     this._resetAnimate();
     return unit;
   }
 
   insertDecal({ index, x, y }: IDecalArgs) {
     const decal = new Decal({ index, x, y });
-    this.layers[decal.layerId].sprites[y][x] = decal;
+    this.state.layers[decal.layerId].sprites[y][x] = decal;
     this._resetAnimate();
     return decal;
+  }
+
+  /**
+   * Take a map string or JS array and assign assets to the respective layers
+   */
+  importMap(map: number[][] | string) {
+    if (typeof map === "string") {
+      map = map.split("\n").map((x) => x.split(",").map((y) => parseInt(y)));
+    }
+
+    this.state.setGrid(map[0].length, map.length);
+
+    for (const { x, y } of State.gridIterator(
+      1,
+      this.state.width,
+      this.state.height
+    )) {
+      const index = map[y][x];
+      const item = this.insertTerrain({ index, x, y, rerender: false });
+      if (
+        item instanceof Building &&
+        Building.hqIndexes.includes(item.spriteIdx)
+      ) {
+        this.state.players.push({
+          co: "",
+          country: item.country,
+        });
+      }
+    }
+    this.render();
+    console.log(this.movement);
   }
 
   private _insertCursor(x: number, y: number) {
@@ -295,8 +201,12 @@ class RenderEngine {
       window.cancelAnimationFrame(this.requestedAnimationFrame);
     }
     this.renderQueue = new Queue();
-    for (const { x, y, layerId } of this.gridIterator()) {
-      const item: SpriteType = this.layers[layerId].sprites[y][x];
+    for (const { x, y, layerId } of State.gridIterator(
+      this.state.layers.length,
+      this.state.width,
+      this.state.height
+    )) {
+      const item: SpriteType = this.state.layers[layerId].sprites[y][x];
       if (item) {
         item.playing = false;
         item.frameIndex = 0;
@@ -308,45 +218,28 @@ class RenderEngine {
   }
 
   /**
-   * Iterator to efficiently loop through all (x,y) coordinates on each layer
-   */
-  *gridIterator(args?: { layers?: number; width?: number; height?: number }) {
-    const layers = args?.layers ?? this.layers.length;
-    const width = args?.width ?? this.width;
-    const height = args?.height ?? this.height;
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        for (let layerId = 0; layerId < layers; layerId++) {
-          yield { layerId, x, y };
-        }
-      }
-    }
-  }
-
-  /**
    * Draw grid ontop of map for debugging
    */
   private _drawGrid() {
-    const ctx = this.layers[ELayer.UI].ctx;
+    const ctx = this.state.layers[ELayer.UI].ctx;
     // vertical
     ctx.save();
     ctx.strokeStyle = "#fafadd";
-    for (let i = 0; i < this.width + 1; i++) {
-      const iPx = i * this.grid + this.padding;
-      const heightPx = this.height * this.grid + this.padding;
+    for (let i = 0; i < this.state.width + 1; i++) {
+      const iPx = i * this.state.grid + this.state.padding;
+      const heightPx = this.state.height * this.state.grid + this.state.padding;
       ctx.beginPath();
-      ctx.moveTo(iPx, 0 + this.padding);
+      ctx.moveTo(iPx, 0 + this.state.padding);
       ctx.lineTo(iPx, heightPx);
       ctx.stroke();
       ctx.closePath();
     }
     // horizontal
-    for (let i = 0; i < this.height + 1; i++) {
-      const iPx = i * this.grid + this.padding;
-      const widthPx = this.width * this.grid + this.padding;
+    for (let i = 0; i < this.state.height + 1; i++) {
+      const iPx = i * this.state.grid + this.state.padding;
+      const widthPx = this.state.width * this.state.grid + this.state.padding;
       ctx.beginPath();
-      ctx.moveTo(0 + this.padding, iPx);
+      ctx.moveTo(0 + this.state.padding, iPx);
       ctx.lineTo(widthPx, iPx);
       ctx.stroke();
       ctx.closePath();
@@ -395,10 +288,10 @@ class RenderEngine {
     }
     const frames = asset.frames[this.style];
     if (frames.length === 0) {
-      this.layers[item.layerId].ctx.drawImage(
+      this.state.layers[item.layerId].ctx.drawImage(
         asset.sprites[this.style],
-        item.x * this.grid + asset.offsetX,
-        item.y * this.grid + asset.offsetY
+        item.x * this.state.grid + asset.offsetX,
+        item.y * this.state.grid + asset.offsetY
       );
     }
     const frame = frames[item.frameIndex];
@@ -433,12 +326,13 @@ class RenderEngine {
       item.frameIndex = 0;
     }
     const nextFrame = frames[item.frameIndex];
-    const posX = item.x * this.grid + this.padding + asset.offsetX;
+    const posX = item.x * this.state.grid + this.state.padding + asset.offsetX;
 
     if (frame.disposalType === 2) {
-      const offset = frame.dims.height - this.grid;
-      const posY = item.y * this.grid - offset + this.padding + asset.offsetY;
-      this.layers[item.layerId].ctx.clearRect(
+      const offset = frame.dims.height - this.state.grid;
+      const posY =
+        item.y * this.state.grid - offset + this.state.padding + asset.offsetY;
+      this.state.layers[item.layerId].ctx.clearRect(
         posX,
         posY,
         frame.dims.width,
@@ -446,19 +340,29 @@ class RenderEngine {
       );
     }
     const { dims } = nextFrame;
-    const frameImageData = this.layers[item.layerId].ctx.createImageData(
+    const frameImageData = this.state.layers[item.layerId].ctx.createImageData(
       dims.width,
       dims.height
     );
     frameImageData.data.set(nextFrame.patch);
 
-    const offset = nextFrame.dims.height - this.grid;
-    const posY = item.y * this.grid - offset + this.padding + asset.offsetY;
-    this.layers[item.layerId].ctx.putImageData(frameImageData, posX, posY);
+    const offset = nextFrame.dims.height - this.state.grid;
+    const posY =
+      item.y * this.state.grid - offset + this.state.padding + asset.offsetY;
+    this.state.layers[item.layerId].ctx.putImageData(
+      frameImageData,
+      posX,
+      posY
+    );
   }
 
   private _clearCanvas(layerId: ELayer) {
-    this.layers[layerId].ctx.clearRect(0, 0, this.widthPx, this.heightPx);
+    this.state.layers[layerId].ctx.clearRect(
+      0,
+      0,
+      this.state.widthPx,
+      this.state.heightPx
+    );
   }
 
   private _cursorRender(x: number, y: number) {
@@ -466,23 +370,23 @@ class RenderEngine {
     const item = this._insertCursor(x, y);
     const asset = this.assets.decals.get(item.spriteIdx);
     if (asset) {
-      this.layers[item.layerId].ctx.drawImage(
+      this.state.layers[item.layerId].ctx.drawImage(
         asset.sprites[this.style],
-        x * this.grid + this.padding + asset.offsetX,
-        y * this.grid + this.padding + asset.offsetY
+        x * this.state.grid + this.state.padding + asset.offsetX,
+        y * this.state.grid + this.state.padding + asset.offsetY
       );
     }
   }
 
   private _setupEventListeners() {
-    this.rootElement.addEventListener("mousemove", (e) => {
+    this.state.root.addEventListener("mousemove", (e) => {
       const x = Math.min(
-        Math.max(0, e.offsetX - this.padding),
-        this.width * this.grid
+        Math.max(0, e.offsetX - this.state.padding),
+        this.state.width * this.state.grid
       );
       const y = Math.min(
-        Math.max(0, e.offsetY - this.padding),
-        this.height * this.grid
+        Math.max(0, e.offsetY - this.state.padding),
+        this.state.height * this.state.grid
       );
 
       const prev = {
@@ -493,13 +397,13 @@ class RenderEngine {
       this.mouse = {
         x,
         y,
-        gridX: Math.floor(x / this.grid),
-        gridY: Math.floor(y / this.grid),
+        gridX: Math.floor(x / this.state.grid),
+        gridY: Math.floor(y / this.state.grid),
         prev,
       };
       if (
-        this.mouse.gridX < this.width &&
-        this.mouse.gridY < this.height &&
+        this.mouse.gridX < this.state.width &&
+        this.mouse.gridY < this.state.height &&
         (this.mouse.gridX !== this.mouse.prev.gridX ||
           this.mouse.gridY !== this.mouse.prev.gridY)
       ) {
@@ -507,7 +411,7 @@ class RenderEngine {
       }
     });
 
-    this.rootElement.addEventListener("mousedown", (e) => {
+    this.state.root.addEventListener("mousedown", (e) => {
       e.preventDefault();
       console.log(this.mouse);
       // const decal = this.insertDecal(
@@ -520,4 +424,4 @@ class RenderEngine {
   }
 }
 
-export default RenderEngine;
+export default Engine;

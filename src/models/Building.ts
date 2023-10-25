@@ -1,4 +1,4 @@
-import { ELayer } from "../RenderEngine";
+import { ELayer } from "../State";
 import { ETerrain, ITerrainArgs, Terrain } from "./Terrain";
 import { ECountry } from "./types";
 
@@ -12,21 +12,31 @@ export class Building extends Terrain {
   layerId = ELayer.DYNAMIC;
   // TODO: resupply metadata
 
-  constructor({ index, x, y, capture }: IBuildingArgs) {
-    if (!Building.isDynamicTerrain(index)) {
-      throw new Error(`Cannot create Building with terrainIdx: ${index}`);
-    }
-    super({ index, x, y });
-    this.country = Building.getCountry(index);
-    this.capture ?? capture;
-  }
-
   static isDynamicTerrain(index: ETerrain) {
     return (
       index >= ETerrain.NEUTRALCITY ||
       (index < ETerrain.VPIPE && index > ETerrain.WPIPEEND)
     );
   }
+
+  static hqIndexes = [
+    ETerrain.GREYSKYHQ,
+    ETerrain.JADESUNHQ,
+    ETerrain.REDFIREHQ,
+    ETerrain.ACIDRAINHQ,
+    ETerrain.BLUEMOONHQ,
+    ETerrain.WHITENOVAHQ,
+    ETerrain.BLACKHOLEHQ,
+    ETerrain.COBALTICEHQ,
+    ETerrain.GREENEARTHHQ,
+    ETerrain.AMBERBLAZEHQ,
+    ETerrain.ORANGESTARHQ,
+    ETerrain.PINKCOSMOSHQ,
+    ETerrain.TEALGALAXYHQ,
+    ETerrain.BROWNDESERTHQ,
+    ETerrain.YELLOWCOMETHQ,
+    ETerrain.PURPLELIGHTNINGHQ,
+  ];
 
   static getCountry(index: ETerrain) {
     if (
@@ -128,5 +138,14 @@ export class Building extends Terrain {
     } else {
       return ECountry.NEUTRAL;
     }
+  }
+
+  constructor({ index, x, y, capture }: IBuildingArgs) {
+    if (!Building.isDynamicTerrain(index)) {
+      throw new Error(`Cannot create Building with terrainIdx: ${index}`);
+    }
+    super({ index, x, y });
+    this.country = Building.getCountry(index);
+    this.capture ?? capture;
   }
 }

@@ -1,3 +1,5 @@
+import { Terrain, Building, Unit, Decal } from ".";
+
 export enum EMapStyle {
   AW1,
   AW2,
@@ -42,4 +44,13 @@ export enum ECountry {
   PURPLE_LIGHTNING,
   ACID_RAIN,
   WHITE_NOVA,
+}
+
+export type SpriteType = Terrain | Building | Unit | Decal;
+
+export interface IMapLayer<T extends SpriteType> {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  imageData: ImageData | undefined;
+  sprites: (T | null)[][];
 }

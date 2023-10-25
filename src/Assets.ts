@@ -1,15 +1,22 @@
 import { decompressFrames, parseGIF } from "gifuct-js";
-import { ETerrain, ITerrainMetadata, Terrain } from "./models/Terrain";
-import { EUnit, IUnitMetadata, Unit } from "./models/Unit";
-
-import { Decal, EDecal, IDecalMetadata } from "./models/Decal";
-import { ISpriteMetadata } from "./models/Sprite";
-import { EMapStyle, STYLES, countryCodes } from "./models/types";
 import {
-  terrainFilenames,
+  Decal,
+  EDecal,
+  EMapStyle,
+  ETerrain,
+  EUnit,
+  IDecalMetadata,
+  ISpriteMetadata,
+  ITerrainMetadata,
+  IUnitMetadata,
+  STYLES,
+  Terrain,
+  Unit,
+  countryCodes,
   decalFilenames,
+  terrainFilenames,
   unitFilenames,
-} from "./models/files";
+} from "./models";
 
 export type TerrainSpriteMetadata = ITerrainMetadata & ISpriteMetadata;
 export type UnitSpriteMetadata = IUnitMetadata & ISpriteMetadata;
@@ -24,6 +31,10 @@ class Assets {
   units: Map<EUnit, UnitSpriteMetadata> = new Map();
   decals: Map<EDecal, DecalSpriteMetadata> = new Map();
 
+  static countryUnits = countryCodes
+    .map((countryCode) => unitFilenames.map((unit) => `${countryCode}${unit}`))
+    .flat();
+
   /**
    * load all assets asynchronously and assign to this.assets
    */
@@ -32,10 +43,6 @@ class Assets {
 
     return this;
   }
-
-  static countryUnits = countryCodes
-    .map((countryCode) => unitFilenames.map((unit) => `${countryCode}${unit}`))
-    .flat();
 
   private async _loadAssets() {
     const [terrainAW1, terrainAW2, terrainANI] = await Promise.all(

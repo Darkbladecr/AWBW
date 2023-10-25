@@ -1,4 +1,4 @@
-import { ELayer } from "../RenderEngine";
+import { ELayer } from "../State";
 import { EMovementType } from "../movement/Movement";
 import { unitFilenames } from "./files";
 import { Sprite } from "./Sprite";
@@ -77,29 +77,6 @@ export class Unit extends Sprite {
   x: number;
   y: number;
   insertDecal: (args: IDecalArgs) => void;
-
-  constructor({
-    insertDecal,
-    countryIdx,
-    unitIdx,
-    x,
-    y,
-    hp,
-    ammo,
-    fuel,
-  }: IUnitArgs) {
-    super();
-    this.insertDecal = insertDecal;
-    this.country = countryIdx;
-    this.unit = unitIdx;
-    this.name = unitFilenames[unitIdx - 1];
-    this.spriteIdx = Unit.getUnitCode(countryIdx, unitIdx);
-    this.x = x;
-    this.y = y;
-    this.hp = hp ?? 10;
-    this.ammo = ammo ?? 99;
-    this.fuel = fuel ?? 99;
-  }
 
   static metadata: IUnitMetadata[] = [
     {
@@ -496,6 +473,29 @@ export class Unit extends Sprite {
     return unit + (country - 1) * unitFilenames.length;
   }
 
+  constructor({
+    insertDecal,
+    countryIdx,
+    unitIdx,
+    x,
+    y,
+    hp,
+    ammo,
+    fuel,
+  }: IUnitArgs) {
+    super();
+    this.insertDecal = insertDecal;
+    this.country = countryIdx;
+    this.unit = unitIdx;
+    this.name = unitFilenames[unitIdx - 1];
+    this.spriteIdx = Unit.getUnitCode(countryIdx, unitIdx);
+    this.x = x;
+    this.y = y;
+    this.hp = hp ?? 10;
+    this.ammo = ammo ?? 99;
+    this.fuel = fuel ?? 99;
+  }
+
   get hp() {
     return this._hp;
   }
@@ -522,8 +522,5 @@ export class Unit extends Sprite {
     if (fuel < 30) {
       this.insertDecal({ index: EDecal.FUEL, x: this.x, y: this.y });
     }
-  }
-  get metadata(): IUnitMetadata {
-    return Unit.metadata[this.spriteIdx - 1];
   }
 }

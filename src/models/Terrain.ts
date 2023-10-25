@@ -1,5 +1,9 @@
-import { IMovementArr, NULL_MOVEMENT } from "../movement/Movement";
-import { ELayer } from "../RenderEngine";
+import {
+  IMovementArr,
+  IMovementWeatherArr,
+  Movement,
+} from "../movement/Movement";
+import { ELayer } from "../State";
 import { terrainFilenames } from "./files";
 import { Sprite } from "./Sprite";
 
@@ -179,7 +183,7 @@ export interface ITerrainMetadata {
   name: string;
   spriteIdx: ETerrain;
   defense: number;
-  movement: [IMovementArr, IMovementArr, IMovementArr];
+  movement: IMovementWeatherArr;
 }
 
 export interface ITerrainArgs {
@@ -194,13 +198,6 @@ export class Terrain extends Sprite {
   x: number;
   y: number;
 
-  constructor({ index, x, y }: ITerrainArgs) {
-    super();
-    this.spriteIdx = index;
-    this.x = x;
-    this.y = y;
-  }
-
   static metadata(index: ETerrain): ITerrainMetadata {
     let terrainIdx = index;
     if (index > 81) {
@@ -213,7 +210,7 @@ export class Terrain extends Sprite {
       spriteIdx: index,
       name: terrainFilenames[terrainIdx],
       defense: 0,
-      movement: [NULL_MOVEMENT, NULL_MOVEMENT, NULL_MOVEMENT],
+      movement: [Movement.nullArr, Movement.nullArr, Movement.nullArr],
     };
     if (
       index === ETerrain.PLAIN ||
@@ -374,10 +371,10 @@ export class Terrain extends Sprite {
     return metadata;
   }
 
-  get metadata(): ITerrainMetadata {
-    return Terrain.metadata(this.spriteIdx);
+  constructor({ index, x, y }: ITerrainArgs) {
+    super();
+    this.spriteIdx = index;
+    this.x = x;
+    this.y = y;
   }
-  // get sprite():  IAssets["terrain"] {
-  //   return this.assets.get(terrainIdx);
-  // }
 }
