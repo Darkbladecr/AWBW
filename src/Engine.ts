@@ -460,6 +460,9 @@ class Engine {
       }
     });
 
+    // remove right-click menu
+    this.state.root.addEventListener("contextmenu", (e) => e.preventDefault());
+
     this.state.root.addEventListener("mousedown", (e) => {
       e.preventDefault();
       const unit =
@@ -468,15 +471,31 @@ class Engine {
         ];
       if (unit) {
         const ctx = this.state.layers[ELayer.HELPERS].ctx;
-        if (unit.showMovement) {
-          unit.showMovement = false;
-          ctx.clearRect(0, 0, this.state.widthPx, this.state.heightPx);
-        } else {
-          unit.showMovement = true;
-          const availableMovementArr = unit.availableMovement();
+        const rightClick = e.button === 2;
 
-          for (const coord of availableMovementArr) {
-            this._paintGrid({ ...coord, style: EHelperStyle.MOVEMENT });
+        if (!rightClick && unit.fuel > 0) {
+          if (unit.showMovement) {
+            unit.showMovement = false;
+            ctx.clearRect(0, 0, this.state.widthPx, this.state.heightPx);
+          } else {
+            unit.showMovement = true;
+            const availableMovementArr = unit.availableMovement();
+
+            for (const coord of availableMovementArr) {
+              this._paintGrid({ ...coord, style: EHelperStyle.MOVEMENT });
+            }
+          }
+        } else if (unit.ammo > 0) {
+          if (unit.showAttack) {
+            unit.showAttack = false;
+            ctx.clearRect(0, 0, this.state.widthPx, this.state.heightPx);
+          } else {
+            unit.showAttack = true;
+            const attackRangeArr = unit.attackRange();
+
+            for (const coord of attackRangeArr) {
+              this._paintGrid({ ...coord, style: EHelperStyle.ATTACK });
+            }
           }
         }
       }

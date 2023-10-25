@@ -51,11 +51,35 @@ async function main() {
   game.engine.insertUnit({
     countryIdx: ECountry.ORANGE_STAR,
     unitIdx: EUnit.INFANTRY,
+    x: 2,
+    y: 0,
+  });
+  game.engine.insertUnit({
+    countryIdx: ECountry.BLACK_HOLE,
+    unitIdx: EUnit.INFANTRY,
+    x: 1,
+    y: 1,
+  });
+  game.engine.insertUnit({
+    countryIdx: ECountry.BLACK_HOLE,
+    unitIdx: EUnit.INFANTRY,
+    x: 2,
+    y: 1,
+  });
+  game.engine.insertUnit({
+    countryIdx: ECountry.ORANGE_STAR,
+    unitIdx: EUnit.ARTILLERY,
     x: 0,
     y: 0,
     hp: 9,
-    ammo: 0,
+    // ammo: 0,
     // fuel: 1,
+  });
+  game.engine.insertUnit({
+    countryIdx: ECountry.ORANGE_STAR,
+    unitIdx: EUnit.ARTILLERY,
+    x: 10,
+    y: 10,
   });
   // console.log(unit);
   // console.log(game.state);

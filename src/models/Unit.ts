@@ -1,5 +1,5 @@
 import { ELayer, State } from "../State";
-import { EMovementType } from "../movement/Movement";
+import { EMovementType, Movement } from "../movement/Movement";
 import { unitFilenames } from "./files";
 import { Sprite } from "./Sprite";
 import { ECountry } from "./types";
@@ -94,7 +94,7 @@ export class Unit extends Sprite {
       turnFuel: 0,
       hiddenTurnFuel: 0,
       vision: 2,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.TREADS,
       givesResupply: false,
       storage: 0,
@@ -139,7 +139,7 @@ export class Unit extends Sprite {
       turnFuel: 2,
       hiddenTurnFuel: 0,
       vision: 3,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.AIR,
       givesResupply: false,
       storage: 0,
@@ -199,7 +199,7 @@ export class Unit extends Sprite {
       turnFuel: 5,
       hiddenTurnFuel: 0,
       vision: 2,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.AIR,
       givesResupply: false,
       storage: 0,
@@ -229,7 +229,7 @@ export class Unit extends Sprite {
       turnFuel: 1,
       hiddenTurnFuel: 0,
       vision: 3,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.SEA,
       givesResupply: false,
       storage: 2,
@@ -244,7 +244,7 @@ export class Unit extends Sprite {
       turnFuel: 5,
       hiddenTurnFuel: 0,
       vision: 2,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.AIR,
       givesResupply: false,
       storage: 0,
@@ -259,7 +259,7 @@ export class Unit extends Sprite {
       turnFuel: 0,
       hiddenTurnFuel: 0,
       vision: 2,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.FOOT,
       givesResupply: false,
       storage: 0,
@@ -302,7 +302,7 @@ export class Unit extends Sprite {
       turnFuel: 0,
       hiddenTurnFuel: 0,
       vision: 1,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.TREADS,
       givesResupply: false,
       storage: 0,
@@ -317,7 +317,7 @@ export class Unit extends Sprite {
       turnFuel: 0,
       hiddenTurnFuel: 0,
       vision: 2,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.BAZOOKA,
       givesResupply: false,
       storage: 0,
@@ -332,7 +332,7 @@ export class Unit extends Sprite {
       turnFuel: 0,
       hiddenTurnFuel: 0,
       vision: 1,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.TREADS,
       givesResupply: false,
       storage: 0,
@@ -362,7 +362,7 @@ export class Unit extends Sprite {
       turnFuel: 0,
       hiddenTurnFuel: 0,
       vision: 1,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.TREADS,
       givesResupply: false,
       storage: 0,
@@ -392,7 +392,7 @@ export class Unit extends Sprite {
       turnFuel: 0,
       hiddenTurnFuel: 0,
       vision: 5,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.WHEELS,
       givesResupply: false,
       storage: 0,
@@ -422,7 +422,7 @@ export class Unit extends Sprite {
       turnFuel: 5,
       hiddenTurnFuel: 8,
       vision: 4,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.AIR,
       givesResupply: false,
       storage: 0,
@@ -437,7 +437,7 @@ export class Unit extends Sprite {
       turnFuel: 1,
       hiddenTurnFuel: 5,
       vision: 5,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.SEA,
       givesResupply: false,
       storage: 0,
@@ -452,7 +452,7 @@ export class Unit extends Sprite {
       turnFuel: 2,
       hiddenTurnFuel: 0,
       vision: 2,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.AIR,
       givesResupply: false,
       storage: 1,
@@ -467,7 +467,7 @@ export class Unit extends Sprite {
       turnFuel: 0,
       hiddenTurnFuel: 0,
       vision: 3,
-      range: [0, 0],
+      range: [1, 1],
       movementType: EMovementType.TREADS,
       givesResupply: false,
       storage: 0,
@@ -537,5 +537,12 @@ export class Unit extends Sprite {
       return [];
     }
     return this.state.movement.availableMovement(this);
+  }
+
+  attackRange() {
+    if (this.ammo === 0) {
+      return [];
+    }
+    return this.state.movement.availableRange(this);
   }
 }
