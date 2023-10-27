@@ -16,11 +16,23 @@ import Queue from "./utils/Queue";
 import Assets, { SpriteMetadata } from "./Assets";
 import { ELayer, State } from "./State";
 import { Movement } from "./movement/Movement";
+import { Mouse } from "./Mouse";
 
-enum EHelperStyle {
+export enum EHelperStyle {
   MOVEMENT,
   ATTACK,
   VISION,
+}
+
+export interface IClearGridArgs {
+  layer: ELayer;
+  state: State;
+  x: number;
+  y: number;
+}
+
+export interface IPaintGridArgs extends IClearGridArgs {
+  style: EHelperStyle;
 }
 
 interface IRenderArgs {
@@ -34,28 +46,59 @@ interface IInsertTerrain extends IBuildingArgs {
 
 class Engine {
   state: State;
+  helperRoot: Unit | null = null;
 
   requestedAnimationFrame: number | undefined;
   renderQueue = new Queue<SpriteType>();
 
-  mouse = {
-    x: 0,
-    y: 0,
-    gridX: 0,
-    gridY: 0,
-    prev: {
-      gridX: 0,
-      gridY: 0,
-    },
-  };
+  mouse: Mouse;
 
   assets!: Assets;
 
   private _style: EMapStyle = EMapStyle.ANIMATED;
   lastRender = 0;
 
+  static paintGrid({ state, layer, x, y, style }: IPaintGridArgs) {
+    const ctx = state.layers[layer].ctx;
+    ctx.save();
+    if (style === EHelperStyle.MOVEMENT) {
+      ctx.fillStyle = "rgba(67, 217, 228, 0.4)";
+      ctx.strokeStyle = "rgb(22, 98, 184)";
+    } else if (style === EHelperStyle.ATTACK) {
+      ctx.fillStyle = "rgba(255, 27, 27, 0.4)";
+      ctx.strokeStyle = "rgb(155, 0, 0)";
+    } else if (style === EHelperStyle.VISION) {
+      ctx.fillStyle = "rgba(236, 221, 9, 0.4)";
+      ctx.strokeStyle = "rgb(255, 115, 0)";
+    }
+    ctx.fillRect(
+      x * state.grid + state.padding,
+      y * state.grid + state.padding,
+      state.grid,
+      state.grid
+    );
+    ctx.strokeRect(
+      x * state.grid + state.padding,
+      y * state.grid + state.padding,
+      state.grid,
+      state.grid
+    );
+    ctx.restore();
+  }
+
+  static clearGrid({ state, layer, x, y }: IClearGridArgs) {
+    const ctx = state.layers[layer].ctx;
+    ctx.clearRect(
+      x * state.grid - state.padding,
+      y * state.grid - state.padding,
+      state.grid + state.padding * 3,
+      state.grid + state.padding * 3
+    );
+  }
+
   constructor(state: State) {
     this.state = state;
+    this.mouse = new Mouse(state);
 
     this._setupEventListeners();
   }
@@ -391,71 +434,131 @@ class Engine {
     }
   }
 
-  private _paintGrid({
-    x,
-    y,
-    style,
-  }: {
-    x: number;
-    y: number;
-    style: EHelperStyle;
-  }) {
-    const ctx = this.state.layers[ELayer.HELPERS].ctx;
-    ctx.save();
-    if (style === EHelperStyle.MOVEMENT) {
-      ctx.fillStyle = "rgba(67, 217, 228, 0.4)";
-      ctx.strokeStyle = "rgb(22, 98, 184)";
-    } else if (style === EHelperStyle.ATTACK) {
-      ctx.fillStyle = "rgba(255, 27, 27, 0.4)";
-      ctx.strokeStyle = "rgb(155, 0, 0)";
-    } else if (style === EHelperStyle.VISION) {
-      ctx.fillStyle = "rgba(236, 221, 9, 0.4)";
-      ctx.strokeStyle = "rgb(255, 115, 0)";
+  private _clearHelpers() {
+    this.state.movementMode = false;
+    this.state.movement.movementMap.clear();
+    const unit = this.helperRoot;
+    if (unit) {
+      unit.showMovement = false;
+      unit.showAttack = false;
+      unit.showVision = false;
+      this.helperRoot = null;
     }
-    ctx.fillRect(
-      x * this.state.grid + this.state.padding,
-      y * this.state.grid + this.state.padding,
-      this.state.grid,
-      this.state.grid
+    this.state.layers[ELayer.HELPERS].ctx.clearRect(
+      0,
+      0,
+      this.state.widthPx,
+      this.state.heightPx
     );
-    ctx.strokeRect(
-      x * this.state.grid + this.state.padding,
-      y * this.state.grid + this.state.padding,
-      this.state.grid,
-      this.state.grid
-    );
-    ctx.restore();
+  }
+
+  private _handleMouseClick(e: MouseEvent) {
+    e.preventDefault();
+    const unit =
+      this.state.layers[ELayer.UNITS].sprites[this.mouse.gridY][
+        this.mouse.gridX
+      ];
+
+    if (e.button === 0) {
+      // Left click
+      if (unit) {
+        this._handleLeftClick(unit);
+      } else {
+        const building =
+          this.state.layers[ELayer.DYNAMIC].sprites[this.mouse.gridY][
+            this.mouse.gridX
+          ];
+        this._handleLeftClick(building);
+      }
+    } else if (e.button === 2) {
+      // Right click
+      this._handleRightClick(unit);
+    }
+  }
+
+  private _handleLeftClick(item: Unit | Building | null) {
+    if (this.helperRoot && this.helperRoot.showMovement) {
+      if (
+        this.helperRoot.availableMovement().has(`${this.mouse}`) &&
+        this.state.movement.unitCostGrid
+      ) {
+        const path = Movement.AStar(
+          this.state.movement.unitCostGrid,
+          [this.helperRoot.x, this.helperRoot.y],
+          [this.mouse.gridX, this.mouse.gridY]
+        );
+        for (const { x, y } of path) {
+          Engine.paintGrid({
+            state: this.state,
+            x,
+            y,
+            layer: ELayer.HELPERS,
+            style: EHelperStyle.VISION,
+          });
+        }
+      } else {
+        this.helperRoot.clearHelpers();
+        this.helperRoot = null;
+        this._handleLeftClick(item);
+      }
+    } else {
+      if (item instanceof Unit) {
+        this._handleUnitClick(item);
+      } else if (item instanceof Building) {
+        // build actions
+      } else if (this.helperRoot) {
+        this.helperRoot.clearHelpers();
+        this.helperRoot = null;
+      }
+    }
+  }
+
+  private _handleRightClick(unit: Unit | null) {
+    if (!unit) {
+      this._clearHelpers();
+      if (this.helperRoot) {
+        this.helperRoot.clearHelpers();
+        this.helperRoot = null;
+      }
+    } else {
+      if (this.helperRoot) {
+        const reclickedUnit = this.helperRoot === unit;
+        if (!reclickedUnit) {
+          this.helperRoot.showAttack = false;
+          if (!unit.showAttack) {
+            unit.showAttack = true;
+          }
+          this.helperRoot = unit;
+        } else {
+          this.helperRoot.showAttack = false;
+        }
+      }
+    }
+  }
+
+  private _handleUnitClick(unit: Unit) {
+    if (!this.state.movementMode) {
+      this.state.movementMode = true;
+    }
+    if (this.helperRoot) {
+      const reclickedUnit = this.helperRoot === unit;
+      if (!reclickedUnit) {
+        this.helperRoot.showMovement = false;
+
+        if (!unit.showMovement) {
+          unit.showMovement = true;
+        }
+        this.helperRoot = unit;
+      }
+    } else {
+      unit.showMovement = true;
+      this.helperRoot = unit;
+    }
   }
 
   private _setupEventListeners() {
     this.state.root.addEventListener("mousemove", (e) => {
-      const x = Math.min(
-        Math.max(0, e.offsetX - this.state.padding),
-        this.state.width * this.state.grid
-      );
-      const y = Math.min(
-        Math.max(0, e.offsetY - this.state.padding),
-        this.state.height * this.state.grid
-      );
-
-      const prev = {
-        gridX: this.mouse.gridX,
-        gridY: this.mouse.gridY,
-      };
-
-      this.mouse = {
-        x,
-        y,
-        gridX: Math.floor(x / this.state.grid),
-        gridY: Math.floor(y / this.state.grid),
-        prev,
-      };
-      if (
-        this.mouse.gridX < this.state.width &&
-        this.mouse.gridY < this.state.height &&
-        (this.mouse.gridX !== this.mouse.prev.gridX ||
-          this.mouse.gridY !== this.mouse.prev.gridY)
-      ) {
+      if (this.mouse.handleMove(e)) {
         this._cursorRender(this.mouse.gridX, this.mouse.gridY);
       }
     });
@@ -465,47 +568,7 @@ class Engine {
 
     this.state.root.addEventListener("mousedown", (e) => {
       e.preventDefault();
-      const unit =
-        this.state.layers[ELayer.UNITS].sprites[this.mouse.gridY][
-          this.mouse.gridX
-        ];
-      if (unit) {
-        const ctx = this.state.layers[ELayer.HELPERS].ctx;
-        const rightClick = e.button === 2;
-
-        if (!rightClick && unit.fuel > 0) {
-          if (unit.showMovement) {
-            unit.showMovement = false;
-            ctx.clearRect(0, 0, this.state.widthPx, this.state.heightPx);
-          } else {
-            unit.showMovement = true;
-            const availableMovementArr = unit.availableMovement();
-
-            for (const coord of availableMovementArr) {
-              this._paintGrid({ ...coord, style: EHelperStyle.MOVEMENT });
-            }
-          }
-        } else if (unit.ammo > 0) {
-          if (unit.showAttack) {
-            unit.showAttack = false;
-            ctx.clearRect(0, 0, this.state.widthPx, this.state.heightPx);
-          } else {
-            unit.showAttack = true;
-            const attackRangeArr = unit.attackRange();
-
-            for (const coord of attackRangeArr) {
-              this._paintGrid({ ...coord, style: EHelperStyle.ATTACK });
-            }
-          }
-        }
-      }
-      // console.log(this.mouse);
-      // const decal = this.insertDecal(
-      //   EDecal.HP9,
-      //   this.mouse.gridX,
-      //   this.mouse.gridY
-      // );
-      // this.renderQueue.enqueue(decal);
+      this._handleMouseClick(e);
     });
   }
 }

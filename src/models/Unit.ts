@@ -1,9 +1,11 @@
 import { ELayer, State } from "../State";
-import { EMovementType, Movement } from "../movement/Movement";
+import { EMovementType } from "../movement/Movement";
 import { unitFilenames } from "./files";
 import { Sprite } from "./Sprite";
 import { ECountry } from "./types";
 import { EDecal, IDecalArgs } from "./Decal";
+import { DistanceGraph } from "../movement/graph/Distance";
+import Engine, { EHelperStyle } from "../Engine";
 
 export enum EUnit {
   ANTIAIR,
@@ -76,9 +78,10 @@ export class Unit extends Sprite {
   _fuel!: number;
   turnFuel = 0;
 
-  showMovement = false;
+  _showMovement = false;
+  private _availableMovement: Map<string, DistanceGraph> = new Map();
   showVision = false;
-  showAttack = false;
+  _showAttack = false;
   exhausted = false;
 
   x: number;
@@ -532,9 +535,80 @@ export class Unit extends Sprite {
     }
   }
 
+  get showMovement() {
+    return this._showMovement;
+  }
+  set showMovement(bool: boolean) {
+    if (this._showMovement === bool) {
+      return;
+    }
+    if (this._availableMovement.size === 0) {
+      this._availableMovement = this.availableMovement();
+    }
+    for (const { x, y } of this._availableMovement.values()) {
+      if (bool) {
+        Engine.paintGrid({
+          state: this.state,
+          layer: ELayer.HELPERS,
+          x,
+          y,
+          style: EHelperStyle.MOVEMENT,
+        });
+      } else {
+        Engine.clearGrid({
+          state: this.state,
+          layer: ELayer.HELPERS,
+          x,
+          y,
+        });
+      }
+    }
+    if (!bool) {
+      this._availableMovement.clear();
+    }
+    this._showMovement = bool;
+  }
+
+  get showAttack() {
+    return this._showAttack;
+  }
+  set showAttack(bool: boolean) {
+    if (this._showAttack === bool) {
+      return;
+    }
+    this._showAttack = bool;
+    for (const { x, y } of this.attackRange()) {
+      if (bool) {
+        Engine.paintGrid({
+          state: this.state,
+          layer: ELayer.HELPERS,
+          x,
+          y,
+          style: EHelperStyle.ATTACK,
+        });
+      } else {
+        Engine.clearGrid({
+          state: this.state,
+          layer: ELayer.HELPERS,
+          x,
+          y,
+        });
+      }
+    }
+  }
+
+  clearHelpers() {
+    this.showAttack = false;
+    this.showMovement = false;
+    this.showVision = false;
+  }
+
   availableMovement() {
+    if (this._showMovement && this._availableMovement.size > 0) {
+      return this._availableMovement;
+    }
     if (this.exhausted) {
-      return [];
+      return new Map<string, DistanceGraph>();
     }
     return this.state.movement.availableMovement(this);
   }

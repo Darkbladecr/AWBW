@@ -56,6 +56,7 @@ export class State {
   weather = EWeather.CLEAR;
   layers!: GameMapLayers;
   movement!: Movement;
+  movementMode = false;
 
   // grid width & height
   private _width = 0;

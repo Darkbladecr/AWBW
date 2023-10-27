@@ -2,6 +2,11 @@ import { ELayer, State } from "../State";
 import { Building, ITerrainMetadata, Terrain, Unit } from "../models";
 import { ECountry, IMapLayer } from "../models/types";
 import { EWeather } from "../weather";
+import { Grid } from "./Grid";
+import { GridNode } from "./GridNode";
+import { BinaryHeap } from "./graph/BinaryHeap";
+import { DistanceGraph } from "./graph/Distance";
+import { RangeGraph } from "./graph/Range";
 
 export enum EMovementType {
   FOOT,
@@ -24,17 +29,14 @@ export interface IMovementArgs {
   countryTurn: ECountry;
 }
 
-interface IDistanceNode {
-  x: number;
-  y: number;
-  totalCost: number;
-  neighbors: IDistanceNode[];
-}
-
 export class Movement {
   state: State;
   terrainMap: ITerrainMetadata[][];
   movementCost: IMovementWeatherArr[][];
+  movementMap: Map<string, DistanceGraph> = new Map();
+  costGrid: Grid | null = null;
+  unitCostGrid: Grid | null = null;
+  startPos: [number, number] = [0, 0];
 
   static nullArr: IMovementArr = [0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -62,98 +64,72 @@ export class Movement {
     [-1, -1], // UP LEFT
   ];
 
-  static *distanceGraphIterator(
-    distanceGraph: IDistanceNode
-  ): Generator<{ x: number; y: number; totalCost: number }> {
-    yield {
-      x: distanceGraph.x,
-      y: distanceGraph.y,
-      totalCost: distanceGraph.totalCost,
-    };
-    for (const node of distanceGraph.neighbors) {
-      yield* Movement.distanceGraphIterator(node);
-    }
-  }
-
   static manhattanDistance(x1: number, y1: number, x2: number, y2: number) {
     return Math.abs(x1 - x2) + Math.abs(y1 - y2);
   }
 
-  static step(
-    distanceNode: IDistanceNode,
-    mp: number,
-    fuel: number,
-    movementCostGrid: number[][]
-  ) {
-    const { x, y, totalCost } = distanceNode;
-    movementCostGrid[y][x] = 0; // set current grid as seen
+  static AStar(
+    grid: Grid,
+    startPos: [number, number],
+    endPos: [number, number]
+  ): GridNode[] {
+    grid.cleanDirty();
 
-    for (const [x1, y1] of Movement.directionVectors) {
-      let nextGrid: number;
-      try {
-        nextGrid = movementCostGrid[y + y1][x + x1];
-      } catch (e) {
-        continue;
+    const start = grid.grid[startPos[1]][startPos[0]];
+    const end = grid.grid[endPos[1]][endPos[0]];
+
+    start.h = Movement.manhattanDistance(start.x, start.y, end.x, end.y);
+    grid.markDirty(start);
+
+    const heap = new BinaryHeap<GridNode>((node: GridNode) => node.f);
+    heap.push(start);
+
+    while (heap.size > 0) {
+      const currentNode = heap.pop();
+      // End case -- result has been found, return the traced path
+      if (currentNode === end) {
+        return currentNode.pathTo();
       }
-      if (
-        nextGrid &&
-        totalCost + nextGrid <= mp &&
-        totalCost + nextGrid <= fuel
-      ) {
-        distanceNode.neighbors.push({
-          x: x + x1,
-          y: y + y1,
-          totalCost: totalCost + nextGrid,
-          neighbors: [],
-        });
-        Movement.step(
-          distanceNode.neighbors[distanceNode.neighbors.length - 1],
-          mp,
-          fuel,
-          movementCostGrid
-        );
+
+      // Normal case -- move currentNode from open to closed, process each of its neighbors
+      currentNode.closed = true;
+      const neighbors = grid.neighbors(currentNode);
+
+      for (let i = 0, il = neighbors.length; i < il; i++) {
+        const neighbor = neighbors[i];
+        if (neighbor.closed || neighbor.impassible) {
+          // not a valid node, so skip to next neighbor
+          continue;
+        }
+
+        // The g score is the shortest distance from start to currentNode.
+        // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
+        const gScore = currentNode.g + neighbor.getCost(currentNode);
+        const isVisted = neighbor.visited;
+
+        if (!isVisted || gScore < neighbor.g) {
+          // Node not visited so process or found a more optimal path to this node, so take a score.
+          neighbor.visited = true;
+          neighbor.parent = currentNode;
+          neighbor.h =
+            neighbor.h ||
+            Movement.manhattanDistance(neighbor.x, neighbor.y, end.x, end.y);
+          neighbor.g = gScore;
+          neighbor.f = neighbor.g + neighbor.h;
+          grid.markDirty(neighbor);
+
+          if (!isVisted) {
+            // Pushing to heap will put it in proper place based on the 'f' value.
+            heap.push(neighbor);
+          } else {
+            // Already seen the node, but since it has been rescored we need to reorder it in the heap
+            heap.rescore(neighbor);
+          }
+        }
       }
     }
-  }
-
-  static rangeStep(
-    rangeNode: IDistanceNode,
-    startX: number,
-    startY: number,
-    minRange: number,
-    maxRange: number,
-    rangeGrid: boolean[][]
-  ) {
-    const { x, y } = rangeNode;
-    rangeGrid[y][x] = false;
-
-    for (const [x1, y1] of Movement.directionVectors) {
-      let nextGrid: boolean;
-      const x2 = x + x1;
-      const y2 = y + y1;
-      try {
-        nextGrid = rangeGrid[y2][x2];
-      } catch (e) {
-        continue;
-      }
-      const distance = Movement.manhattanDistance(startX, startY, x2, y2);
-      if (nextGrid && distance <= maxRange) {
-        rangeNode.neighbors.push({
-          x: x2,
-          y: y2,
-          totalCost: distance >= minRange ? 1 : 0,
-          neighbors: [],
-        });
-        Movement.rangeStep(
-          rangeNode.neighbors[rangeNode.neighbors.length - 1],
-          startX,
-          startY,
-          minRange,
-          maxRange,
-          rangeGrid
-        );
-      }
-    }
+    // No result was found - empty array signifies failure to find path.
+    return [];
   }
 
   constructor(state: State) {
@@ -190,62 +166,70 @@ export class Movement {
     }
   }
 
-  availableMovement(unit: Unit) {
-    const { fuel } = unit;
-    const { movementType, mp } = Unit.metadata[unit.unitIdx];
-    const { width, height, weather, layers } = this.state;
-    const movementCostGrid = this.movementCost.map((rows) =>
-      rows.map((cols) => cols[weather][movementType])
+  createCostGrid(movementType: EMovementType) {
+    const costGrid = this.movementCost.map((rows) =>
+      rows.map((cols) => cols[this.state.weather][movementType])
     );
+    return new Grid(costGrid);
+  }
 
+  countryCostGrid(countryIdx: ECountry) {
+    if (!this.costGrid) {
+      throw new Error("costGrid not initialized");
+    }
+    const { width, height, layers } = this.state;
+    const clone = new Grid(
+      this.costGrid.grid.map((y) => y.map((x) => x.weight))
+    );
+    // check for blocking units
     for (const { x, y } of State.gridIterator(1, width, height)) {
       const otherUnit = layers[ELayer.UNITS].sprites[y][x];
-      if (otherUnit && otherUnit.countryIdx !== unit.countryIdx) {
-        movementCostGrid[y][x] = 0;
+      if (otherUnit && otherUnit.countryIdx !== countryIdx) {
+        clone.grid[y][x].weight = 0;
       }
     }
+    return clone;
+  }
 
-    const distanceGraph: IDistanceNode = {
+  availableMovement(unit: Unit) {
+    const { fuel } = unit;
+    const { mp, movementType } = Unit.metadata[unit.unitIdx];
+
+    if (!this.costGrid) {
+      this.costGrid = this.createCostGrid(movementType);
+    }
+    this.unitCostGrid = this.countryCostGrid(unit.countryIdx);
+    this.startPos = [unit.x, unit.y];
+
+    const graph = DistanceGraph.create({
       x: unit.x,
       y: unit.y,
-      totalCost: 0,
-      neighbors: [],
-    };
-    Movement.step(distanceGraph, mp, fuel, movementCostGrid);
+      mp,
+      fuel,
+      costGrid: this.unitCostGrid,
+    });
 
-    const movementAvailableArr: { x: number; y: number }[] = [];
-    for (const coord of Movement.distanceGraphIterator(distanceGraph)) {
-      if (coord.totalCost === 0) {
+    for (const node of graph.iter()) {
+      if (node.totalCost === 0) {
         continue;
       }
-      movementAvailableArr.push({ x: coord.x, y: coord.y });
+      this.movementMap.set(`${node}`, node);
     }
-    return movementAvailableArr;
+    return this.movementMap;
   }
 
   availableRange(unit: Unit) {
-    const [minRange, maxRange] = Unit.metadata[unit.spriteIdx].range;
-    const rangeGrid = Movement.createGrid<boolean>(
-      this.state.width,
-      this.state.height,
-      true
-    );
-    const rangeGraph: IDistanceNode = {
+    const [minRange, maxRange] = Unit.metadata[unit.unitIdx].range;
+    const graph = RangeGraph.create({
       x: unit.x,
       y: unit.y,
-      totalCost: 0,
-      neighbors: [],
-    };
-    Movement.rangeStep(
-      rangeGraph,
-      unit.x,
-      unit.y,
       minRange,
       maxRange,
-      rangeGrid
-    );
+      width: this.state.width,
+      height: this.state.height,
+    });
     const availableRangeArr: { x: number; y: number }[] = [];
-    for (const coord of Movement.distanceGraphIterator(rangeGraph)) {
+    for (const coord of graph.iter()) {
       if (coord.totalCost === 0) {
         continue;
       }
