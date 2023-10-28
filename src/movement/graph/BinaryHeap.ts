@@ -44,7 +44,7 @@ export class BinaryHeap<T> {
     const node = this.content[index];
     while (index > 0) {
       // compute the parent element's index and fetch it
-      const parentIdx = ((index + 1) >> 1) - 1;
+      const parentIdx = ((index + 1) >> 1) - 1; // 2n+(1,2) = x Math.floor(i/2) - 1
       const parent = this.content[parentIdx];
       // swap the elments if the parent is greater
       if (this.scoreFn(node) < this.scoreFn(parent)) {
@@ -64,8 +64,8 @@ export class BinaryHeap<T> {
 
     while (true) {
       // compute the indices of the child elements
-      const child2Idx = (index + 1) << 1;
-      const child1Idx = child2Idx - 1;
+      const child2Idx = (index + 1) << 1; // (i+1) * 2 = 2i+2
+      const child1Idx = child2Idx - 1; // 2i+1
       let swap: number = -1;
       let child1Score: number = -1;
       if (child1Idx < length) {

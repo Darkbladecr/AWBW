@@ -3,8 +3,6 @@ import { Building, ITerrainMetadata, Terrain, Unit } from "../models";
 import { ECountry, IMapLayer } from "../models/types";
 import { EWeather } from "../weather";
 import { Grid } from "./Grid";
-import { GridNode } from "./GridNode";
-import { BinaryHeap } from "./graph/BinaryHeap";
 import { DistanceGraph } from "./graph/Distance";
 import { RangeGraph } from "./graph/Range";
 
@@ -68,70 +66,6 @@ export class Movement {
     return Math.abs(x1 - x2) + Math.abs(y1 - y2);
   }
 
-  static AStar(
-    grid: Grid,
-    startPos: [number, number],
-    endPos: [number, number]
-  ): GridNode[] {
-    grid.cleanDirty();
-
-    const start = grid.grid[startPos[1]][startPos[0]];
-    const end = grid.grid[endPos[1]][endPos[0]];
-
-    start.h = Movement.manhattanDistance(start.x, start.y, end.x, end.y);
-    grid.markDirty(start);
-
-    const heap = new BinaryHeap<GridNode>((node: GridNode) => node.f);
-    heap.push(start);
-
-    while (heap.size > 0) {
-      const currentNode = heap.pop();
-      // End case -- result has been found, return the traced path
-      if (currentNode === end) {
-        return currentNode.pathTo();
-      }
-
-      // Normal case -- move currentNode from open to closed, process each of its neighbors
-      currentNode.closed = true;
-      const neighbors = grid.neighbors(currentNode);
-
-      for (let i = 0, il = neighbors.length; i < il; i++) {
-        const neighbor = neighbors[i];
-        if (neighbor.closed || neighbor.impassible) {
-          // not a valid node, so skip to next neighbor
-          continue;
-        }
-
-        // The g score is the shortest distance from start to currentNode.
-        // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
-        const gScore = currentNode.g + neighbor.getCost(currentNode);
-        const isVisted = neighbor.visited;
-
-        if (!isVisted || gScore < neighbor.g) {
-          // Node not visited so process or found a more optimal path to this node, so take a score.
-          neighbor.visited = true;
-          neighbor.parent = currentNode;
-          neighbor.h =
-            neighbor.h ||
-            Movement.manhattanDistance(neighbor.x, neighbor.y, end.x, end.y);
-          neighbor.g = gScore;
-          neighbor.f = neighbor.g + neighbor.h;
-          grid.markDirty(neighbor);
-
-          if (!isVisted) {
-            // Pushing to heap will put it in proper place based on the 'f' value.
-            heap.push(neighbor);
-          } else {
-            // Already seen the node, but since it has been rescored we need to reorder it in the heap
-            heap.rescore(neighbor);
-          }
-        }
-      }
-    }
-    // No result was found - empty array signifies failure to find path.
-    return [];
-  }
-
   constructor(state: State) {
     this.state = state;
 
@@ -166,14 +100,14 @@ export class Movement {
     }
   }
 
-  createCostGrid(movementType: EMovementType) {
+  private _createCostGrid(movementType: EMovementType) {
     const costGrid = this.movementCost.map((rows) =>
       rows.map((cols) => cols[this.state.weather][movementType])
     );
     return new Grid(costGrid);
   }
 
-  countryCostGrid(countryIdx: ECountry) {
+  private _countryCostGrid(countryIdx: ECountry) {
     if (!this.costGrid) {
       throw new Error("costGrid not initialized");
     }
@@ -196,9 +130,10 @@ export class Movement {
     const { mp, movementType } = Unit.metadata[unit.unitIdx];
 
     if (!this.costGrid) {
-      this.costGrid = this.createCostGrid(movementType);
+      // cache for multiple clicks on same unit
+      this.costGrid = this._createCostGrid(movementType);
     }
-    this.unitCostGrid = this.countryCostGrid(unit.countryIdx);
+    this.unitCostGrid = this._countryCostGrid(unit.countryIdx);
     this.startPos = [unit.x, unit.y];
 
     const graph = DistanceGraph.create({
@@ -210,10 +145,9 @@ export class Movement {
     });
 
     for (const node of graph.iter()) {
-      if (node.totalCost === 0) {
-        continue;
+      if (node.totalCost > 0) {
+        this.movementMap.set(`${node}`, node);
       }
-      this.movementMap.set(`${node}`, node);
     }
     return this.movementMap;
   }
@@ -230,10 +164,9 @@ export class Movement {
     });
     const availableRangeArr: { x: number; y: number }[] = [];
     for (const coord of graph.iter()) {
-      if (coord.totalCost === 0) {
-        continue;
+      if (coord.totalCost > 0) {
+        availableRangeArr.push({ x: coord.x, y: coord.y });
       }
-      availableRangeArr.push({ x: coord.x, y: coord.y });
     }
     return availableRangeArr;
   }

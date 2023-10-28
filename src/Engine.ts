@@ -17,6 +17,7 @@ import Assets, { SpriteMetadata } from "./Assets";
 import { ELayer, State } from "./State";
 import { Movement } from "./movement/Movement";
 import { Mouse } from "./Mouse";
+import { Grid } from "./movement/Grid";
 
 export enum EHelperStyle {
   MOVEMENT,
@@ -482,7 +483,7 @@ class Engine {
         this.helperRoot.availableMovement().has(`${this.mouse}`) &&
         this.state.movement.unitCostGrid
       ) {
-        const path = Movement.AStar(
+        const path = Grid.aStar(
           this.state.movement.unitCostGrid,
           [this.helperRoot.x, this.helperRoot.y],
           [this.mouse.gridX, this.mouse.gridY]

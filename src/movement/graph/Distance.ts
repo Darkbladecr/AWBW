@@ -33,7 +33,6 @@ export class DistanceGraph extends Graph {
       }
       const nextNode = costGrid.grid[y2][x2];
       if (
-        nextNode &&
         nextNode.weight !== 0 &&
         node.totalCost + nextNode.weight <= mp &&
         node.totalCost + nextNode.weight <= fuel
