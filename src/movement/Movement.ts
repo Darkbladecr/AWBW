@@ -1,7 +1,7 @@
 import { ELayer, State } from "../State";
 import { Building, ITerrainMetadata, Terrain, Unit } from "../models";
 import { ECountry, IMapLayer } from "../models/types";
-import { EWeather } from "../weather";
+import { EWeather } from "../weather/Weather";
 import { Grid } from "./Grid";
 import { DistanceGraph } from "./graph/Distance";
 import { RangeGraph } from "./graph/Range";
@@ -102,7 +102,7 @@ export class Movement {
 
   private _createCostGrid(movementType: EMovementType) {
     const costGrid = this.movementCost.map((rows) =>
-      rows.map((cols) => cols[this.state.weather][movementType])
+      rows.map((cols) => cols[this.state.weather.state][movementType])
     );
     return new Grid(costGrid);
   }

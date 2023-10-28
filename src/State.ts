@@ -8,7 +8,7 @@ import {
   CO,
 } from "./models";
 import { Movement } from "./movement/Movement";
-import { EWeather } from "./weather";
+import { Weather } from "./weather/Weather";
 
 export interface IStateArgs {
   players: IPlayer[];
@@ -32,6 +32,7 @@ export enum ELayer {
   AMMO,
   CAPTURE,
   CURSOR,
+  WEATHER,
   UI,
 }
 
@@ -45,6 +46,7 @@ export type GameMapLayers = [
   IMapLayer<Decal>, // ammo
   IMapLayer<Decal>, // capture
   IMapLayer<Decal>, // cursor
+  IMapLayer<any>, // Weather
   IMapLayer<any> // UI
 ];
 
@@ -53,7 +55,7 @@ export class State {
   playerIdxTurn = 0;
   day = 1;
 
-  weather = EWeather.CLEAR;
+  weather!: Weather;
   layers!: GameMapLayers;
   movement!: Movement;
   movementMode = false;
@@ -154,6 +156,7 @@ export class State {
     if (this.width > 0 && this.height > 0) {
       layers[ELayer.STATIC].canvas.style.backgroundColor = "#000";
     }
+    this.weather = new Weather(layers[ELayer.WEATHER].canvas);
     this.layers = layers as GameMapLayers;
   }
 }
