@@ -48,6 +48,6 @@ export class Mouse {
     return false;
   }
   toString() {
-    return `${this.gridX},${this.gridY}`;
+    return State.mapKey(this.gridX, this.gridY);
   }
 }

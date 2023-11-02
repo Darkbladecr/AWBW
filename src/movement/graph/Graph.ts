@@ -1,3 +1,5 @@
+import { State } from "../../State";
+
 export interface IGraphArgs {
   x: number;
   y: number;
@@ -16,6 +18,13 @@ export class Graph {
     this.totalCost = totalCost ?? 0;
   }
 
+  *[Symbol.iterator](): Generator<Graph> {
+    yield this;
+    for (const child of this.children) {
+      yield* child;
+    }
+  }
+
   *iter(): Generator<Graph> {
     yield this;
     for (const child of this.children) {
@@ -24,6 +33,6 @@ export class Graph {
   }
 
   toString() {
-    return `${this.x},${this.y}`;
+    return State.mapKey(this.x, this.y);
   }
 }

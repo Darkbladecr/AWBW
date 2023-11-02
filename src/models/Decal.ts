@@ -1,4 +1,4 @@
-import { ELayer } from "../State";
+import { ELayer, State } from "../State";
 import { Sprite, ISpriteMetadata } from "./Sprite";
 
 export enum EDecal {
@@ -31,6 +31,7 @@ export interface IDecalArgs {
   index: EDecal;
   x: number;
   y: number;
+  state: State;
 }
 
 export class Decal extends Sprite {
@@ -70,8 +71,8 @@ export class Decal extends Sprite {
     return metadata;
   }
 
-  constructor({ index, x, y }: IDecalArgs) {
-    super();
+  constructor({ index, x, y, state }: IDecalArgs) {
+    super(state);
     this.spriteIdx = index;
     this.x = x;
     this.y = y;

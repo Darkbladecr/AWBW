@@ -56,7 +56,6 @@ export class RangeGraph extends Graph {
           new RangeGraph({
             x: x2,
             y: y2,
-            parent: node,
             totalCost: distance >= minRange ? 1 : 0,
           })
         );

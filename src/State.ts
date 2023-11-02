@@ -63,6 +63,7 @@ export class State {
   // grid width & height
   private _width = 0;
   private _height = 0;
+  scale = 1; // TODO: setup scaling of the canvas
   grid = 16;
   padding = 4;
   widthPx!: number;
@@ -72,6 +73,10 @@ export class State {
   debug = true;
 
   static layerNames = Object.keys(ELayer);
+
+  static mapKey(x: number, y: number) {
+    return `(${x},${y})`;
+  }
 
   /**
    * Iterator to efficiently loop through all (x,y) coordinates on each layer
@@ -148,9 +153,7 @@ export class State {
         canvas,
         ctx,
         imageData: ctx.getImageData(0, 0, canvas.width, canvas.height),
-        sprites: Array.from({ length: this.height }, () =>
-          Array(this.width).fill(null)
-        ),
+        items: new Map(),
       });
     }
     if (this.width > 0 && this.height > 0) {

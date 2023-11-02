@@ -52,5 +52,5 @@ export interface IMapLayer<T extends SpriteType> {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   imageData: ImageData | undefined;
-  sprites: (T | null)[][];
+  items: Map<string, T>;
 }

@@ -513,7 +513,12 @@ export class Unit extends Sprite {
   set hp(hp: number) {
     this._hp = Math.max(0, hp);
     if (this._hp < 10) {
-      this.insertDecal({ index: hp - 1, x: this.x, y: this.y });
+      this.insertDecal({
+        index: hp - 1,
+        x: this.x,
+        y: this.y,
+        state: this.state,
+      });
     }
   }
   get ammo() {
@@ -522,7 +527,12 @@ export class Unit extends Sprite {
   set ammo(ammo: number) {
     this._ammo = Math.max(0, ammo);
     if (this._ammo < 4) {
-      this.insertDecal({ index: EDecal.AMMO, x: this.x, y: this.y });
+      this.insertDecal({
+        index: EDecal.AMMO,
+        x: this.x,
+        y: this.y,
+        state: this.state,
+      });
     }
   }
   get fuel() {
@@ -531,7 +541,12 @@ export class Unit extends Sprite {
   set fuel(fuel: number) {
     this._fuel = Math.max(0, fuel);
     if (this._fuel < 30) {
-      this.insertDecal({ index: EDecal.FUEL, x: this.x, y: this.y });
+      this.insertDecal({
+        index: EDecal.FUEL,
+        x: this.x,
+        y: this.y,
+        state: this.state,
+      });
     }
   }
 
@@ -618,5 +633,16 @@ export class Unit extends Sprite {
       return [];
     }
     return this.state.movement.availableRange(this);
+  }
+
+  update() {
+    if (
+      this.state.layers[ELayer.UNITS].items.has(State.mapKey(this.x, this.y))
+    ) {
+      this.state.layers[ELayer.UNITS].items.set(
+        State.mapKey(this.x, this.y),
+        this
+      );
+    }
   }
 }

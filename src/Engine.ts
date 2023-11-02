@@ -47,7 +47,7 @@ interface IInsertTerrain extends IBuildingArgs {
 
 class Engine {
   state: State;
-  helperRoot: Unit | null = null;
+  unitKey: string | undefined;
 
   requestedAnimationFrame: number | undefined;
   renderQueue = new Queue<SpriteType>();
@@ -124,16 +124,12 @@ class Engine {
     const grid = args?.grid ?? false;
     this.state.movement = new Movement(this.state);
 
-    for (const { x, y, layerId } of State.gridIterator(
-      this.state.layers.length,
-      this.state.width,
-      this.state.height
-    )) {
-      const item: SpriteType = this.state.layers[layerId].sprites[y][x];
-      if (item) {
+    for (let i = 0, il = this.state.layers.length; i < il; i++) {
+      for (const item of this.state.layers[i].items.values()) {
         this.renderQueue.enqueue(item);
       }
     }
+
     this._animate(0);
 
     if (grid || this.state.debug) {
@@ -159,10 +155,13 @@ class Engine {
     let item: Terrain | Building;
     if (!Building.isDynamicTerrain(index)) {
       item = new Terrain({ index, x, y, state: this.state });
-      this.state.layers[ELayer.STATIC].sprites[y][x] = item;
+      this.state.layers[ELayer.STATIC].items.set(State.mapKey(x, y), item);
     } else {
       item = new Building({ index, x, y, state: this.state, capture });
-      this.state.layers[ELayer.DYNAMIC].sprites[y][x] = item as Building;
+      this.state.layers[ELayer.DYNAMIC].items.set(
+        State.mapKey(x, y),
+        item as Building
+      );
     }
     if (rerender) {
       this._resetAnimate();
@@ -193,14 +192,14 @@ class Engine {
       ammo,
       fuel,
     });
-    this.state.layers[ELayer.UNITS].sprites[y][x] = unit;
+    this.state.layers[ELayer.UNITS].items.set(State.mapKey(x, y), unit);
     this._resetAnimate();
     return unit;
   }
 
   insertDecal({ index, x, y }: IDecalArgs) {
-    const decal = new Decal({ index, x, y });
-    this.state.layers[decal.layerId].sprites[y][x] = decal;
+    const decal = new Decal({ index, x, y, state: this.state });
+    this.state.layers[decal.layerId].items.set(State.mapKey(x, y), decal);
     this._resetAnimate();
     return decal;
   }
@@ -242,7 +241,7 @@ class Engine {
   }
 
   private _insertCursor(x: number, y: number) {
-    const cursor = new Decal({ index: EDecal.SELECT, x, y });
+    const cursor = new Decal({ index: EDecal.SELECT, x, y, state: this.state });
     return cursor;
   }
 
@@ -258,16 +257,12 @@ class Engine {
       window.cancelAnimationFrame(this.requestedAnimationFrame);
     }
     this.renderQueue = new Queue();
-    for (const { x, y, layerId } of State.gridIterator(
-      this.state.layers.length,
-      this.state.width,
-      this.state.height
-    )) {
-      const item: SpriteType = this.state.layers[layerId].sprites[y][x];
-      if (item) {
+    for (let i = 0, il = this.state.layers.length; i < il; i++) {
+      for (const item of this.state.layers[i].items.values()) {
         item.playing = false;
         item.frameIndex = 0;
-        item.layerId = layerId;
+        item.layerId = i;
+        this.state.layers[i].items.set(State.mapKey(item.x, item.y), item);
         this.renderQueue.enqueue(item);
       }
     }
@@ -438,12 +433,13 @@ class Engine {
   private _clearHelpers() {
     this.state.movementMode = false;
     this.state.movement.movementMap.clear();
-    const unit = this.helperRoot;
-    if (unit) {
-      unit.showMovement = false;
-      unit.showAttack = false;
-      unit.showVision = false;
-      this.helperRoot = null;
+    if (this.unitKey) {
+      const unit = this.state.layers[ELayer.UNITS].items.get(this.unitKey);
+      if (unit) {
+        unit.clearHelpers();
+        unit.update();
+        this.unitKey = undefined;
+      }
     }
     this.state.layers[ELayer.HELPERS].ctx.clearRect(
       0,
@@ -455,37 +451,36 @@ class Engine {
 
   private _handleMouseClick(e: MouseEvent) {
     e.preventDefault();
-    const unit =
-      this.state.layers[ELayer.UNITS].sprites[this.mouse.gridY][
-        this.mouse.gridX
-      ];
+    const unit = this.state.layers[ELayer.UNITS].items.get(`${this.mouse}`);
+    const building = this.state.layers[ELayer.DYNAMIC].items.get(
+      `${this.mouse}`
+    );
 
     if (e.button === 0) {
       // Left click
-      if (unit) {
-        this._handleLeftClick(unit);
-      } else {
-        const building =
-          this.state.layers[ELayer.DYNAMIC].sprites[this.mouse.gridY][
-            this.mouse.gridX
-          ];
-        this._handleLeftClick(building);
-      }
+      this._handleLeftClick({ unit, building });
     } else if (e.button === 2) {
       // Right click
       this._handleRightClick(unit);
     }
   }
 
-  private _handleLeftClick(item: Unit | Building | null) {
-    if (this.helperRoot && this.helperRoot.showMovement) {
+  private _handleLeftClick(args: {
+    unit: Unit | undefined;
+    building: Building | undefined;
+  }) {
+    if (this.unitKey) {
+      const prevUnit = this.state.layers[ELayer.UNITS].items.get(
+        this.unitKey
+      ) as Unit;
       if (
-        this.helperRoot.availableMovement().has(`${this.mouse}`) &&
+        prevUnit.showMovement &&
+        prevUnit.availableMovement().has(`${this.mouse}`) &&
         this.state.movement.unitCostGrid
       ) {
         const path = Grid.aStar(
           this.state.movement.unitCostGrid,
-          [this.helperRoot.x, this.helperRoot.y],
+          [prevUnit.x, prevUnit.y],
           [this.mouse.gridX, this.mouse.gridY]
         );
         for (const { x, y } of path) {
@@ -498,42 +493,37 @@ class Engine {
           });
         }
       } else {
-        this.helperRoot.clearHelpers();
-        this.helperRoot = null;
-        this._handleLeftClick(item);
+        prevUnit.clearHelpers();
+        this.unitKey = undefined;
+        this._handleLeftClick(args);
       }
-    } else {
-      if (item instanceof Unit) {
-        this._handleUnitClick(item);
-      } else if (item instanceof Building) {
-        // build actions
-      } else if (this.helperRoot) {
-        this.helperRoot.clearHelpers();
-        this.helperRoot = null;
-      }
+    } else if (args.unit) {
+      this._handleUnitClick(args.unit);
+    } else if (args.building) {
+      // TODO: handle building click
     }
   }
 
-  private _handleRightClick(unit: Unit | null) {
+  private _handleRightClick(unit: Unit | undefined) {
     if (!unit) {
       this._clearHelpers();
-      if (this.helperRoot) {
-        this.helperRoot.clearHelpers();
-        this.helperRoot = null;
+    } else if (
+      this.unitKey &&
+      this.state.layers[ELayer.UNITS].items.has(this.unitKey)
+    ) {
+      const prevUnit = this.state.layers[ELayer.UNITS].items.get(
+        this.unitKey
+      ) as Unit;
+      const reclickedUnit = prevUnit === unit;
+      if (reclickedUnit) {
+        unit.showAttack = false;
+      } else {
+        prevUnit.showAttack = false;
+        prevUnit.update();
+        unit.showAttack = true;
+        this.unitKey = State.mapKey(unit.x, unit.y);
       }
-    } else {
-      if (this.helperRoot) {
-        const reclickedUnit = this.helperRoot === unit;
-        if (!reclickedUnit) {
-          this.helperRoot.showAttack = false;
-          if (!unit.showAttack) {
-            unit.showAttack = true;
-          }
-          this.helperRoot = unit;
-        } else {
-          this.helperRoot.showAttack = false;
-        }
-      }
+      unit.update();
     }
   }
 
@@ -541,20 +531,28 @@ class Engine {
     if (!this.state.movementMode) {
       this.state.movementMode = true;
     }
-    if (this.helperRoot) {
-      const reclickedUnit = this.helperRoot === unit;
+    if (
+      this.unitKey &&
+      this.state.layers[ELayer.UNITS].items.has(this.unitKey)
+    ) {
+      const prevUnit = this.state.layers[ELayer.UNITS].items.get(
+        this.unitKey
+      ) as Unit;
+      const reclickedUnit = prevUnit === unit;
       if (!reclickedUnit) {
-        this.helperRoot.showMovement = false;
+        prevUnit.showMovement = false;
+        prevUnit.update();
 
         if (!unit.showMovement) {
           unit.showMovement = true;
         }
-        this.helperRoot = unit;
+        this.unitKey = State.mapKey(unit.x, unit.y);
       }
     } else {
       unit.showMovement = true;
-      this.helperRoot = unit;
+      this.unitKey = State.mapKey(unit.x, unit.y);
     }
+    unit.update();
   }
 
   private _setupEventListeners() {

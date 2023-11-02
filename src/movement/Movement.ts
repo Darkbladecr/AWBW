@@ -86,8 +86,12 @@ export class Movement {
       return;
     }
     for (const { x, y } of State.gridIterator(1, width, height)) {
-      const terrain = this.state.layers[ELayer.STATIC].sprites[y][x];
-      const building = this.state.layers[ELayer.DYNAMIC].sprites[y][x];
+      const terrain = this.state.layers[ELayer.STATIC].items.get(
+        State.mapKey(x, y)
+      );
+      const building = this.state.layers[ELayer.DYNAMIC].items.get(
+        State.mapKey(x, y)
+      );
       if (terrain) {
         this.terrainMap[y][x] = Terrain.metadata(terrain.spriteIdx);
       } else if (building) {
@@ -111,15 +115,13 @@ export class Movement {
     if (!this.costGrid) {
       throw new Error("costGrid not initialized");
     }
-    const { width, height, layers } = this.state;
     const clone = new Grid(
       this.costGrid.grid.map((y) => y.map((x) => x.weight))
     );
     // check for blocking units
-    for (const { x, y } of State.gridIterator(1, width, height)) {
-      const otherUnit = layers[ELayer.UNITS].sprites[y][x];
-      if (otherUnit && otherUnit.countryIdx !== countryIdx) {
-        clone.grid[y][x].weight = 0;
+    for (const otherUnit of this.state.layers[ELayer.UNITS].items.values()) {
+      if (otherUnit.countryIdx !== countryIdx) {
+        clone.grid[otherUnit.y][otherUnit.x].weight = 0;
       }
     }
     return clone;
@@ -144,7 +146,7 @@ export class Movement {
       costGrid: this.unitCostGrid,
     });
 
-    for (const node of graph.iter()) {
+    for (const node of graph) {
       if (node.totalCost > 0) {
         this.movementMap.set(`${node}`, node);
       }
@@ -163,7 +165,7 @@ export class Movement {
       height: this.state.height,
     });
     const availableRangeArr: { x: number; y: number }[] = [];
-    for (const coord of graph.iter()) {
+    for (const coord of graph) {
       if (coord.totalCost > 0) {
         availableRangeArr.push({ x: coord.x, y: coord.y });
       }

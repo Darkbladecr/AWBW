@@ -1,3 +1,5 @@
+import { State } from "../State";
+
 export class GridNode {
   x: number;
   y: number;
@@ -39,7 +41,7 @@ export class GridNode {
   }
 
   toString() {
-    return `(${this.x},${this.y})`;
+    return State.mapKey(this.x, this.y);
   }
 
   pathTo() {
