@@ -106,11 +106,7 @@ function main() {
   }
   const weatherCanvas = document.getElementById("weather") as HTMLCanvasElement;
 
-  const weather = new Weather(
-    weatherCanvas,
-    weatherCanvas.width >> 4,
-    weatherCanvas.height >> 4
-  );
+  const weather = new Weather(weatherCanvas);
   weather.state = EWeather.RAIN;
 }
 

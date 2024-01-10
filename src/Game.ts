@@ -23,22 +23,6 @@ class Game {
 
     return this;
   }
-
-  private _debounce(func: Function, wait: number, immediate?: boolean) {
-    let timeout = 0;
-    const later = () => {
-      timeout = 0;
-      if (!immediate) {
-        func();
-      }
-    };
-    const callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) {
-      func();
-    }
-  }
 }
 
 export default Game;
