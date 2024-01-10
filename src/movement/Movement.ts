@@ -106,7 +106,7 @@ export class Movement {
 
   private _createCostGrid(movementType: EMovementType) {
     const costGrid = this.movementCost.map((rows) =>
-      rows.map((cols) => cols[this.state.weather.state][movementType])
+      rows.map((cols) => cols[this.state.weather.type][movementType])
     );
     return new Grid(costGrid);
   }
@@ -125,6 +125,14 @@ export class Movement {
       }
     }
     return clone;
+  }
+
+  /**
+   * clear costGrid and movementMap for weather changes
+   */
+  clear() {
+    this.costGrid = null;
+    this.movementMap.clear();
   }
 
   availableMovement(unit: Unit) {

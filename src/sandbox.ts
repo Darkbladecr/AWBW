@@ -1,5 +1,3 @@
-import { EWeather, Weather } from "./weather/Weather";
-
 interface ISpriteArgs {
   ctx: CanvasRenderingContext2D;
   img: HTMLImageElement;
@@ -104,10 +102,10 @@ function main() {
     // ctx.drawImage(img, 3, 30, 16, 16, 0, 0, 16, 16);
     // ctx.drawImage(img, 0, 0);
   }
-  const weatherCanvas = document.getElementById("weather") as HTMLCanvasElement;
+  // const weatherCanvas = document.getElementById("weather") as HTMLCanvasElement;
 
-  const weather = new Weather(weatherCanvas);
-  weather.state = EWeather.RAIN;
+  // const weather = new Weather(weatherCanvas);
+  // weather.state = EWeather.RAIN;
 }
 
 main();

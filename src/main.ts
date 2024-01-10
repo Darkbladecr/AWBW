@@ -45,6 +45,7 @@ const sampleMap = [
 
 async function main() {
   const game = await new Game("map", 0, 0).init();
+  (globalThis as any).game = game;
   game.engine.importMap(sampleMap);
   // game.engine.insertTerrain({ index: ETerrain.ORANGESTARCOMTOWER, x: 0, y: 0 });
   // game.engine.insertTerrain({ index: ETerrain.PLAIN, x: 1, y: 0 });

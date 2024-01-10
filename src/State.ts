@@ -159,7 +159,7 @@ export class State {
     if (this.width > 0 && this.height > 0) {
       layers[ELayer.STATIC].canvas.style.backgroundColor = "#000";
     }
-    this.weather = new Weather(layers[ELayer.WEATHER].canvas);
+    this.weather = new Weather(this, layers[ELayer.WEATHER].canvas);
     this.layers = layers as GameMapLayers;
   }
 }
